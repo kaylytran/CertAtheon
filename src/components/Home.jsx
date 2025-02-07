@@ -15,7 +15,7 @@ const Home = () => {
               <a href="#" className="text-gray-700 hover:text-blue-500">About</a>
             </li>
             <li>
-              <a href="#" className="text-gray-700 hover:text-blue-500">Services</a>
+              <a href="#" className="text-gray-700 hover:text-blue-500">Servicesasdasdas</a>
             </li>
             <li>
               <a href="#" className="text-gray-700 hover:text-blue-500">Contact</a>
