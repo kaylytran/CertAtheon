@@ -7,6 +7,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add this for serving the React app
+builder.Services.AddSpaStaticFiles(configuration =>
+{
+    configuration.RootPath = "dist"; // This will be your React build output directory
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -17,9 +23,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
+app.UseRouting();
 app.UseAuthorization();
-
 app.MapControllers();
+
+// Add these lines for the React app
+app.UseSpa(spa =>
+{
+    spa.UseProxyToSpaDevelopmentServer("http://localhost:5173"); // Default Vite dev server port
+});
 
 app.Run();

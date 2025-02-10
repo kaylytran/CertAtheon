@@ -1,17 +1,12 @@
-import React, { useState } from 'react';
-import {
-  BrowserRouter as Router,
-  Route, 
-  Routes,
-  Navigate
-} from "react-router-dom";
-
+import React from 'react';
 import Home from './components/Home';
 
-import './App.css';
-
 function App() {
-  return <Home />;
+    return (
+        <div className="w-full min-h-screen">
+            <Home />
+        </div>
+    );
 }
 
 export default App;
