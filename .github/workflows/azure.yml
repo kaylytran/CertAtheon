@@ -69,14 +69,14 @@ jobs:
       - name: Test
         run: dotnet test --no-build
 
-      - name: Collect Coverage
-        run: coverlet ./UnitTests/bin/Debug/net8.0/UnitTests.dll --target "dotnet" --targetargs "test --no-build" --format lcov --output ./base-lcov.info
+      # - name: Collect Coverage
+      #   run: coverlet ./UnitTests/bin/Debug/net8.0/UnitTests.dll --target "dotnet" --targetargs "test --no-build" --format lcov --output ./base-lcov.info
 
-      - name: Upload code coverage for ref branch
-        uses: actions/upload-artifact@v4
-        with:
-          name: base-lcov.info
-          path: ./base-lcov.info
+      # - name: Upload code coverage for ref branch
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: base-lcov.info
+      #     path: ./base-lcov.info
 
   curr_branch_cov:
     runs-on: ubuntu-latest
