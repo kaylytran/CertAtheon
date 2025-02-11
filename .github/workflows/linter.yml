@@ -2,7 +2,7 @@ name: Super-Linter CI
 
 on:
   pull_request:
-    branches: [ "main", "development" ]
+    branches: ["main", "development"]
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false  # Set to true to lint all files, false to lint only changed files
+          VALIDATE_ALL_CODEBASE: false  # false to lint only changed files
           VALIDATE_CSHARP: true
           VALIDATE_JAVASCRIPT_ES: true
           VALIDATE_PYTHON: true
