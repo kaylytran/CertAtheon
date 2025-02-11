@@ -1,157 +1,52 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build, Test, and Deploy to Azure Web App
-
+name: Build and deploy ASP.Net Core app to Azure Web App - CSCE590
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main", "development" ]
+    branches:
+      - main
+      pull_request:
+        branches: [ "main", "development" ]
   workflow_dispatch:
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore
-
-    - name: Run Tests
-      run: dotnet test --logger trx --results-directory "TestResults"
-
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: success() || failure()
-      with:
-        name: test-results
-        path: TestResults
-
-    # - name: Test Report
-    #   uses: dorny/test-reporter@v1.9.1
-    #   if: success() || failure()
-    #   with:
-    #     name: NUnit Tests
-    #     path: TestResults/*.trx
-    #     reporter: dotnet-trx
-
-  base_branch_cov:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read #This is required for actions/checkout
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.base_ref }}
-
-      - name: Setup .NET
+      - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
-
-      - name: Install Coverlet
-        run: dotnet tool install --global coverlet.console
-
-      - name: Restore dependencies
-        run: dotnet restore 
-
-      - name: Build
-        run: dotnet build --no-restore
-
-      - name: Test
-        run: dotnet test --no-build
-
-      # - name: Collect Coverage
-      #   run: coverlet ./UnitTests/bin/Debug/net8.0/UnitTests.dll --target "dotnet" --targetargs "test --no-build" --format lcov --output ./base-lcov.info
-
-      # - name: Upload code coverage for ref branch
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: base-lcov.info
-      #     path: ./base-lcov.info
-
-  curr_branch_cov:
-    runs-on: ubuntu-latest
-    needs: base_branch_cov
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+          dotnet-version: '8.x'
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
         with:
-         dotnet-version: 8.0.x
-
-      - name: Install Coverlet
-        run: dotnet tool install --global coverlet.console
-
-      - name: Restore dependencies
-        run: dotnet restore 
-
-      - name: Build
-        run: dotnet build --no-restore
-
-      - name: Test
-        run: dotnet test --no-build
-
-      # - name: Collect Coverage
-      #   run: coverlet ./UnitTests/bin/Debug/net8.0/UnitTests.dll --target "dotnet" --targetargs "test --no-build" --format lcov --output ./lcov.info
-
-      # - name: Download base branch coverage report
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: base-lcov.info
-      #     path: ./
-
-      # - name: Generate Code Coverage Report
-      #   id: code-coverage
-      #   uses: barecheck/code-coverage-action@v1
-      #   with:
-      #     barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
-      #     lcov-file: "./lcov.info"
-      #     base-lcov-file: "./base-lcov.info"
-      #     send-summary-comment: true
-      #     show-annotations: "warning"
-
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
   deploy:
-    runs-on: ubuntu-latest
-    needs: [test, curr_branch_cov]  # Ensures deployment happens only after tests and coverage checks pass
-    if: github.ref == 'refs/heads/main'  # Deploys only from main branch
+    runs-on: windows-latest
+    needs: build
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
+    
     steps:
-    - uses: actions/checkout@v4
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
+      
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'CSCE590'
+          slot-name: 'Production'
+          package: .
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-
-    - name: Restore dependencies
-      run: dotnet restore 
-
-    - name: Build and Publish
-      run: dotnet publish -c Release -o ${{ github.workspace }}/publish
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: webapp
-        path: ${{ github.workspace }}/publish
-
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'Certatheon'
-        slot-name: 'Production'
-        package: ${{ github.workspace }}/publish
-        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
