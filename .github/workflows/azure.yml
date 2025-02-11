@@ -104,21 +104,21 @@ jobs:
       # - name: Collect Coverage
       #   run: coverlet ./UnitTests/bin/Debug/net8.0/UnitTests.dll --target "dotnet" --targetargs "test --no-build" --format lcov --output ./lcov.info
 
-      - name: Download base branch coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: base-lcov.info
-          path: ./
+      # - name: Download base branch coverage report
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: base-lcov.info
+      #     path: ./
 
-      - name: Generate Code Coverage Report
-        id: code-coverage
-        uses: barecheck/code-coverage-action@v1
-        with:
-          barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
-          lcov-file: "./lcov.info"
-          base-lcov-file: "./base-lcov.info"
-          send-summary-comment: true
-          show-annotations: "warning"
+      # - name: Generate Code Coverage Report
+      #   id: code-coverage
+      #   uses: barecheck/code-coverage-action@v1
+      #   with:
+      #     barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
+      #     lcov-file: "./lcov.info"
+      #     base-lcov-file: "./base-lcov.info"
+      #     send-summary-comment: true
+      #     show-annotations: "warning"
 
   deploy:
     runs-on: ubuntu-latest
