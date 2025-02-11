@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - main
-      pull_request:
-        branches: [ "main", "development" ]
   workflow_dispatch:
 jobs:
   build:
@@ -49,4 +47,3 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
-
