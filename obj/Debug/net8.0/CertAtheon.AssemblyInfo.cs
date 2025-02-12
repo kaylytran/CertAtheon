@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CertAtheon")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ef02c41cb8e9401468277786c8f5288bccdc2c7f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+27bcb216ff7dc642277cef8b72531296733c11a4")]
 [assembly: System.Reflection.AssemblyProductAttribute("CertAtheon")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CertAtheon")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
