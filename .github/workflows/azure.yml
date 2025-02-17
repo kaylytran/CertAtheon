@@ -54,7 +54,7 @@ jobs:
           path: myapp  # Ensuring artifact is extracted correctly
 
       - name: Debug Deployment Path (Ensure myapp exists)
-        run: dir /s myapp
+        run: myapp
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
