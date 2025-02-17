@@ -25,10 +25,10 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Build with dotnet
-        run: dotnet build Backend/backend.csproj --configuration Release
+        run: dotnet build Backend/CertAtheon.csproj --configuration Release
 
       - name: Publish with dotnet
-        run: dotnet publish Backend/backend.csproj -c Release -o myapp
+        run: dotnet publish Backend/CertAtheon.csproj -c Release -o myapp
 
       - name: Debug Build Output (Verify myapp exists)
         run: dir /s myapp
