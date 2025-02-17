@@ -4,7 +4,7 @@ name: Build and deploy ASP.Net Core app to Azure Web App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
   pull_request:
     branches: [ "main", "development" ]
   workflow_dispatch:
@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read # This is required for actions/checkout
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -31,13 +31,16 @@ jobs:
         run: dotnet publish Backend/CertAtheon.csproj -c Release -o myapp
 
       - name: Debug Build Output (Verify myapp exists)
-        run: ./myapp
+        run: dir myapp
+
+      - name: Zip the published app
+        run: Compress-Archive -Path myapp/* -DestinationPath myapp.zip
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: myapp
+          path: myapp.zip
 
   deploy:
     runs-on: windows-latest
@@ -51,10 +54,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-          path: myapp  # Ensuring artifact is extracted correctly
+          path: .
 
-      - name: Debug Deployment Path (Ensure myapp exists)
-        run: myapp
+      - name: Debug Deployment Path (Ensure myapp.zip exists)
+        run: dir
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -62,5 +65,5 @@ jobs:
         with:
           app-name: 'CSCE590'
           slot-name: 'Production'
-          package: myapp
+          package: myapp.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
