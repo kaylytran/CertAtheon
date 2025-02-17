@@ -31,13 +31,13 @@ jobs:
         run: dotnet publish Backend/CertAtheon.csproj -c Release -o myapp
 
       - name: Debug Build Output (Verify myapp exists)
-        run: dir /s myapp
+        run: ./myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: myapp
+          path: ./myapp
 
   deploy:
     runs-on: windows-latest
@@ -51,7 +51,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-          path: myapp  # Ensuring artifact is extracted correctly
+          path: ./myapp  # Ensuring artifact is extracted correctly
 
       - name: Debug Deployment Path (Ensure myapp exists)
         run: myapp
