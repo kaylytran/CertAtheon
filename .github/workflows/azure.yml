@@ -51,7 +51,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-          path: ./myapp  # Ensuring artifact is extracted correctly
+          path: myapp  # Ensuring artifact is extracted correctly
 
       - name: Debug Deployment Path (Ensure myapp exists)
         run: myapp
