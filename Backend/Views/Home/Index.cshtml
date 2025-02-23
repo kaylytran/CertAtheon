@@ -1,8 +1,89 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["PageTitle"] = "Home";
+    var hasCertifications = true;
+    var items = new List<string> { "Item1", "Item2", "Item3" };
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="h1 mb-4">Certifications</span>
+        <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addCertificateModal">
+            Add New <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
+    @if (hasCertifications)
+    {
+        <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Certification</th>
+                <th scope="col">Certified Date</th>
+                <th scope="col">Status</th>
+                <th scope="col">Expiry Date</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 1; i <= items.Count; i++)
+            {
+                <th scope="row">@i</th>
+                <td>Mark</td>
+                <td>Otto</td>
+                <td>mdo</td>
+                <td>mdo</td>
+                <td>
+                    <a><i class="bi bi-pencil-square text-primary"></i></a>
+                </td>
+                <td>
+                    <a href="google.com"><i class="bi bi-trash-fill text-danger"></i></a>
+                </td>
+                <tr></tr>
+            }
+        </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            You don't have any certifications yet.
+        </div>
+    }
+
+    <!-- Modal -->
+    <div class="modal fade" id="addCertificateModal" tabindex="-1" aria-labelledby="addCertificateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal header -->
+            <div class="modal-header">
+            <h5 class="modal-title" id="addCertificateModalLabel">Add New Certificate</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- Modal body with form -->
+            <div class="modal-body">
+            <form>
+                <div class="mb-3">
+                <label for="certificateName" class="form-label">Certificate Name</label>
+                <input type="text" class="form-control" id="certificateName" placeholder="Enter certificate name">
+                </div>
+                <div class="mb-3">
+                <label for="certifiedDate" class="form-label">Certified Date</label>
+                <input type="date" class="form-control" id="certifiedDate">
+                </div>
+                <div class="mb-3">
+                <label for="validTill" class="form-label">Valid Till</label>
+                <input type="date" class="form-control" id="validTill">
+                </div>
+            </form>
+            </div>
+            <!-- Modal footer with action buttons -->
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary">Add Certificate</button>
+            </div>
+        </div>
+        </div>
+    </div>
 </div>
