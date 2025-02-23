@@ -35,7 +35,6 @@
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                alert(response.message);
                 // If the response indicates that the user must change their password,
                 // redirect to the Change Password view. Otherwise, redirect to the home page.
                 if(response.mustChangePassword) {
