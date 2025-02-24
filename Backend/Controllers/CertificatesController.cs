@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Backend.Data;
 using Backend.Models;
 using System.Security.Claims;
@@ -24,9 +25,9 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetCertificates()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation("Getting certificates for user {UserId}", userId);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("User identifier not found.");
-            
             var certificates = await _context.Certificates
                 .Where(c => c.UserId != null && c.UserId == userId)
                 .ToListAsync();
@@ -65,9 +66,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdateCertificate(int id, [FromBody] Certificate updatedCertificate)
         {
             if (id != updatedCertificate.Id)
+            {
+                _logger.LogWarning("Certificate ID mismatch: {Id} vs {CertificateId}", id, updatedCertificate.Id);
                 return BadRequest();
+            }
 
-            // Optionally, verify certificate ownership here.
             updatedCertificate.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _context.Entry(updatedCertificate).State = EntityState.Modified;
             try
@@ -77,7 +80,10 @@ namespace Backend.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!CertificateExists(id))
+                {
+                    _logger.LogWarning("Certificate with id {Id} not found", id);
                     return NotFound();
+                }
                 else
                     throw;
             }
