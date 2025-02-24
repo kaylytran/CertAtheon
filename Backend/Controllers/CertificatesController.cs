@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Backend.Data;
 using Backend.Models;
+using Backend.Services;
 using System.Security.Claims;
 
 namespace Backend.Controllers
@@ -14,10 +15,14 @@ namespace Backend.Controllers
     public class CertificatesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        
-        public CertificatesController(ApplicationDbContext context)
+        private readonly IMessageSenderService _messageSender;
+        private readonly ILogger<CertificatesController> _logger;
+
+        public CertificatesController(ApplicationDbContext context, IMessageSenderService messageSender, ILogger<CertificatesController> logger)
         {
             _context = context;
+            _messageSender = messageSender;
+            _logger = logger;
         }
         
         // GET: api/Certificates
@@ -38,15 +43,30 @@ namespace Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddCertificate([FromBody] Certificate certificate)
         {
-            // Remove any ModelState error for UserId since it is assigned server-side.
             ModelState.Remove("UserId");
-
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid certificate model state: {ModelState}", ModelState);
                 return BadRequest(ModelState);
+            }
 
             certificate.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _context.Certificates.Add(certificate);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Added certificate {CertificateName} for user {UserId}", certificate.CertificateName, certificate.UserId);
+
+            // Prepare and send a message to the Service Bus Queue.
+            var messageContent = $"New Certificate Added: {certificate.CertificateName}, Id: {certificate.Id}";
+            // Best practice: Wrap in try/catch so that messaging errors don't block the main operation.
+            try
+            {
+                await _messageSender.SendMessageAsync(messageContent);
+                _logger.LogInformation("Message sent to Service Bus: {MessageContent}", messageContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending message to Service Bus for certificate {CertificateId}", certificate.Id);
+            }
 
             return CreatedAtAction(nameof(GetCertificateById), new { id = certificate.Id }, certificate);
         }
@@ -76,6 +96,18 @@ namespace Backend.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Updated certificate {CertificateName} for user {UserId}", updatedCertificate.CertificateName, updatedCertificate.UserId);
+                
+                var messageContent = $"Certificate Updated: {updatedCertificate.CertificateName}, Id: {updatedCertificate.Id}";
+                try
+                {
+                    await _messageSender.SendMessageAsync(messageContent);
+                    _logger.LogInformation("Message sent to Service Bus: {MessageContent}", messageContent);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending message to Service Bus for certificate {CertificateId}", updatedCertificate.Id);
+                }
             }
             catch (DbUpdateConcurrencyException)
             {
