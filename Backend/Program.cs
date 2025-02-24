@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -7,18 +8,21 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the dependency injection container.
+
 builder.Services.AddControllersWithViews();
 
-// Configure EF Core with SQL Server (or your preferred DB)
+// Configure EF Core with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection")));
 
-
-// Add Identity services with default UI and token providers
+// Register Identity services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// Register our Azure Service Bus messaging service as a singleton.
+builder.Services.AddSingleton<IMessageSenderService, ServiceBusSenderService>();
 
 // Configure cookie settings for authentication
 builder.Services.ConfigureApplicationCookie(options =>
@@ -38,7 +42,7 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1" 
     });
     
-    // Define the BearerAuth scheme (optional, for JWT-based auth)
+    // Define the BearerAuth scheme.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
