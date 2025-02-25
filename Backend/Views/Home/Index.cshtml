@@ -1,0 +1,279 @@
+@{
+    ViewData["PageTitle"] = "Home";
+    var user_id = "1"; // Replace with actual user ID
+}
+
+<div class="container my-5">
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="h1 mb-4">Certifications</span>
+            <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addCertificateModal">
+                Add New <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+        <!-- Certificates Table -->
+        <table class="table" id="certificationsTable">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Certification</th>
+                    <th scope="col">Certified Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Expiry Date</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody id="certificationsBody">
+                <!-- Dynamic certificate rows will be inserted here -->
+            </tbody>
+        </table>
+        <div class="alert alert-warning" role="alert" id="noCertificationsAlert" style="display:none;">
+            You don't have any certifications yet.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+        You are not loggedin. Please loggedin to see the certificates
+        </div>
+    }
+    <!-- Modal for adding a new certificate -->
+    <div class="modal fade" id="addCertificateModal" tabindex="-1" aria-labelledby="addCertificateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Modal header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCertificateModalLabel">Add New Certificate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <!-- Modal body with form -->
+                <div class="modal-body">
+                    <form id="addCertificateForm">
+                        <div class="mb-3">
+                            <label for="certificateName" class="form-label">Certificate Name</label>
+                            <input type="text" class="form-control" id="certificateName" placeholder="Enter certificate name" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="certifiedDate" class="form-label">Certified Date</label>
+                            <input type="date" class="form-control" id="certifiedDate" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="validTill" class="form-label">Valid Till</label>
+                            <input type="date" class="form-control" id="validTill" />
+                        </div>
+                    </form>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="addCertificateBtn">Add Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Certificate Modal -->
+<div class="modal fade" id="editCertificateModal" tabindex="-1" aria-labelledby="editCertificateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="editCertificateModalLabel">Edit Certificate</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <!-- Modal body with form -->
+      <div class="modal-body">
+        <form id="editCertificateForm">
+          <!-- Hidden field to hold the certificate id -->
+          <input type="hidden" id="editCertificateId" />
+          <div class="mb-3">
+            <label for="editCertificateName" class="form-label">Certificate Name</label>
+            <input type="text" class="form-control" id="editCertificateName" placeholder="Enter certificate name" required />
+          </div>
+          <div class="mb-3">
+            <label for="editCertifiedDate" class="form-label">Certified Date</label>
+            <input type="date" class="form-control" id="editCertifiedDate" required />
+          </div>
+          <div class="mb-3">
+            <label for="editValidTill" class="form-label">Valid Till</label>
+            <input type="date" class="form-control" id="editValidTill" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Update Certificate</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+    // Load certificates from the API and populate the table
+    function loadCertificates() {
+        $.ajax({
+            url: '/api/certificates',
+            type: 'GET',
+            success: function (data) {
+                var tbody = $('#certificationsBody');
+                tbody.empty();
+                if (data.length === 0) {
+                    $('#noCertificationsAlert').show();
+                } else {
+                    $('#noCertificationsAlert').hide();
+                    $.each(data, function (index, cert) {
+                        // Format dates and compute a simple status based on ValidTill
+                        var certifiedDate = new Date(cert.certifiedDate).toLocaleDateString();
+                        var validTill = new Date(cert.validTill).toLocaleDateString();
+                        var status = (new Date(cert.validTill) > new Date()) ? "Active" : "Expired";
+                        var row = '<tr>' +
+                            '<th scope="row">' + (index + 1) + '</th>' +
+                            '<td>' + cert.certificateName + '</td>' +
+                            '<td>' + certifiedDate + '</td>' +
+                            '<td>' + status + '</td>' +
+                            '<td>' + validTill + '</td>' +
+                            '<td><a href="javascript:void(0);" onclick="editCertificate(' + cert.id + ')"><i class="bi bi-pencil-square text-primary"></i></a></td>' +
+                            '<td><a href="javascript:void(0);" onclick="deleteCertificate(' + cert.id + ')"><i class="bi bi-trash-fill text-danger"></i></a></td>' +
+                            '</tr>';
+                        tbody.append(row);
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching certificates:", error);
+            }
+        });
+    }
+
+    // Add a new certificate using the POST API
+    function addCertificate() {
+        var certData = {
+            CertificateName: $('#certificateName').val(),
+            CertifiedDate: $('#certifiedDate').val(),
+            ValidTill: $('#validTill').val(),
+            UserId: ""
+        };
+        $.ajax({
+            url: '/api/certificates',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(certData),
+            success: function (response) {
+                var modalEl = document.getElementById('addCertificateModal');
+                var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (!modalInstance) {
+                    modalInstance = new bootstrap.Modal(modalEl);
+                }
+                modalInstance.hide();
+                $('.modal-backdrop').remove();                
+                $('body').removeClass('modal-open');                
+                $('#addCertificateForm')[0].reset();
+                loadCertificates();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error adding certificate:", error);
+            }
+        });
+    }
+
+    // Stub for editing a certificate
+    function editCertificate(id) {
+        console.log("Edit certificate with id:", id);
+    }
+
+    // Delete a certificate using the DELETE API
+    function deleteCertificate(id) {
+        $.ajax({
+            url: '/api/certificates/' + id,
+            type: 'DELETE',
+            success: function () {
+                loadCertificates();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error deleting certificate:", error);
+            }
+        });
+    }
+
+    // On document ready, load certificates and bind the Add Certificate button click event
+    $(document).ready(function () {
+        loadCertificates();
+        $('#addCertificateBtn').click(function () {
+            addCertificate();
+        });
+    });
+</script>
+
+<script>
+    // Function to open the Edit Certificate modal and populate its fields
+    function editCertificate(id) {
+    $.ajax({
+        url: '/api/certificates/' + id,  // GET endpoint for certificate details
+        type: 'GET',
+        success: function(data) {
+        // Populate the hidden id and the form fields.
+        $('#editCertificateId').val(data.id);
+        // Use the proper property names from your API response.
+        // If your JSON uses camelCase, adjust accordingly.
+        $('#editCertificateName').val(data.certificateName || data.CertificateName);
+        
+        // Convert the date strings to yyyy-MM-dd format for the date inputs
+        var certifiedDate = new Date(data.certifiedDate || data.CertifiedDate);
+        var validTill = new Date(data.validTill || data.ValidTill);
+        $('#editCertifiedDate').val(certifiedDate.toISOString().substring(0, 10));
+        $('#editValidTill').val(validTill.toISOString().substring(0, 10));
+        
+        // Show the edit modal using Bootstrap's API
+        var modalEl = document.getElementById('editCertificateModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl);
+        }
+        modalInstance.show();
+        },
+        error: function(xhr, status, error) {
+        alert("Error retrieving certificate details: " + (xhr.responseText || error));
+        }
+    });
+    }
+
+    // Handle the submission of the Edit Certificate form
+    $('#editCertificateForm').submit(function(e) {
+    e.preventDefault();
+    var id = $('#editCertificateId').val();
+    var data = {
+        // Ensure property names match what your API expects.
+        id: parseInt(id),
+        CertificateName: $('#editCertificateName').val(),
+        CertifiedDate: $('#editCertifiedDate').val(),
+        ValidTill: $('#editValidTill').val(),
+        UserId: ""
+    };
+
+    $.ajax({
+        url: '/api/certificates/' + id,
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+        // Hide the edit modal using Bootstrap API
+        var modalEl = document.getElementById('editCertificateModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl);
+        }
+        modalInstance.hide();
+        
+        // Remove any lingering modal backdrop and body class
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        
+        loadCertificates();  // This should reload your certificate table
+        },
+        error: function(xhr, status, error) {
+        alert("Update failed: " + (xhr.responseText || error));
+        }
+    });
+    });
+</script>

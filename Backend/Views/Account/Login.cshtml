@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Login";
+}
+
+<h2>Login</h2>
+<form id="loginForm">
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+<div>
+    <a href="/Account/Register">Don't have an account? Register</a>
+</div>
+
+<!-- Include jQuery if not already included -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $("#loginForm").submit(function(e) {
+        e.preventDefault();
+
+        var data = {
+            email: $("input[name='email']").val(),
+            password: $("input[name='password']").val()
+        };
+
+        $.ajax({
+            url: '/api/auth/login',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                // If the response indicates that the user must change their password,
+                // redirect to the Change Password view. Otherwise, redirect to the home page.
+                if(response.mustChangePassword) {
+                    window.location.href = '/Account/ChangePassword';
+                } else {
+                    window.location.href = '/';
+                }
+            },
+            error: function(xhr, status, error) {
+                alert("Login failed: " + (xhr.responseText || error));
+            }
+        });
+    });
+</script>

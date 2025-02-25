@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h2>Register</h2>
+<form id="registerForm">
+    <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input type="text" name="firstName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="lastName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $("#registerForm").submit(function (e) {
+        e.preventDefault();
+
+        var data = {
+            firstName: $("input[name='firstName']").val(),
+            lastName: $("input[name='lastName']").val(),
+            email: $("input[name='email']").val(),
+            password: $("input[name='password']").val()
+        };
+
+        $.ajax({
+            url: '/api/auth/register',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (response) {
+                // Redirect after successful registration
+                window.location.href = '/Account/Login';
+            },
+            error: function (xhr, status, error) {
+                alert("Registration failed: " + error);
+            }
+        });
+    });
+</script>
