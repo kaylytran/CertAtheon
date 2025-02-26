@@ -27,7 +27,7 @@ jobs:
       - name: Set up Node.js (for frontend)
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Ensure this matches your React project's Node.js version
+          node-version: '20'  # Ensure this matches your React project's Node.js version
 
       - name: Install frontend dependencies
         run: |
