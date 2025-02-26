@@ -1,6 +1,6 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
-name: Build and deploy ASP.Net Core app to Azure Web App
+name: Build and deploy ASP.Net Core app with React to Azure Web App
 
 on:
   push:
@@ -23,6 +23,26 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
+
+      - name: Set up Node.js (for frontend)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Ensure this matches your React project's Node.js version
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Move frontend build to backend wwwroot
+        run: |
+          Remove-Item -Recurse -Force Backend/wwwroot/*
+          Move-Item -Path frontend/build/* -Destination Backend/wwwroot/ -Force
 
       - name: Build with dotnet
         run: dotnet build Backend/CertAtheon.csproj --configuration Release
