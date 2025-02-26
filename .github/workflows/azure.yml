@@ -34,6 +34,10 @@ jobs:
           cd frontend
           npm install
 
+      - name: Debug Frontend Directory
+        run: |
+          ls -l frontend
+
       - name: Build frontend
         working-directory: frontend  # Ensures we are in the correct directory
         run: |
