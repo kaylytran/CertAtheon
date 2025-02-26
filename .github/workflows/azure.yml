@@ -35,8 +35,10 @@ jobs:
           npm install
 
       - name: Build frontend
+        working-directory: frontend  # Ensures we are in the correct directory
         run: |
           cd frontend
+          npm install
           npm run build
 
       - name: Move frontend build to backend wwwroot
