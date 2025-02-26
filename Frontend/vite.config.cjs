@@ -15,5 +15,13 @@ export default defineConfig({
     },
     build: {
         outDir: "dist", // ✅ Ensure the build output is placed in "dist"
+    },
+    root: './frontend',  // ✅ Ensures Vite looks in frontend/
+    plugins: [react()],
+    build: {
+        outDir: "dist",
+        rollupOptions: {
+            input: './frontend/index.html', // ✅ Explicitly define entry
+        }
     }
 })
