@@ -29,17 +29,17 @@ jobs:
         with:
           node-version: '20'  # Ensure this matches your React project's Node.js version
 
-      - name: Install frontend dependencies
+      - name: Install Frontend dependencies
         run: |
-          cd frontend
+          cd Frontend
           npm install
 
       - name: Debug Frontend Directory
         run: |
-          ls -l frontend
+          ls -l Frontend
 
       - name: Build Frontend
-        working-directory: Frontend  # Ensures we are in the correct directory
+        working-directory: CertAtheon/Frontend  # Ensures we are in the correct directory
         run: |
           cd
           npm install
