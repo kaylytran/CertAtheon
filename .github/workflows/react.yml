@@ -38,8 +38,8 @@ jobs:
         run: |
           ls -l frontend
 
-      - name: Build frontend
-        working-directory: frontend  # Ensures we are in the correct directory
+      - name: Build Frontend
+        working-directory: Frontend  # Ensures we are in the correct directory
         run: |
           cd
           npm install
