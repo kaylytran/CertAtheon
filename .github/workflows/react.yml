@@ -39,9 +39,8 @@ jobs:
           ls -l Frontend
 
       - name: Build Frontend
-        working-directory: CertAtheon/Frontend  # Ensures we are in the correct directory
+        working-directory: Frontend  # Ensures we are in the correct directory
         run: |
-          cd
           npm install
           npm run build
 
