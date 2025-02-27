@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from './node_modules/vite/dist/node'
+import react from './node_modules/@vitejs/plugin-react/dist/index.d.mts'
 
 export default defineConfig({
     plugins: [react()],
@@ -13,15 +13,11 @@ export default defineConfig({
             }
         }
     },
-    build: {
-        outDir: "dist", // ✅ Ensure the build output is placed in "dist"
-    },
-    root: './frontend',  // ✅ Ensures Vite looks in frontend/
-    plugins: [react()],
+    root: './Frontend',  // ✅ Ensures Vite looks in frontend/
     build: {
         outDir: "dist",
         rollupOptions: {
-            input: './frontend/index.html', // ✅ Explicitly define entry
+            input: './Frontend/index.html', // ✅ Explicitly define entry
         }
     }
 })
