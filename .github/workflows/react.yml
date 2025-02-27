@@ -35,12 +35,15 @@ jobs:
           npm install
 
       # - name: Debug Frontend Directory
+      #   working-directory: frontend
       #   run: |
-      #     ls -l frontend
+      #     pwd
 
       - name: Build frontend
         working-directory: frontend  # Ensures we are in the correct directory
         run: |
+          pwd
+          ls -l
           npm install
           npm run build
 
