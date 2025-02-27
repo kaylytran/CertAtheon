@@ -266,4 +266,4 @@ _Pvt_Extensions
 .obj/
 
 # JSON files
-*.json
+# *.json
