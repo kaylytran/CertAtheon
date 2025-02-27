@@ -10,12 +10,11 @@ on:
     branches: [ "main", "development" ]
   workflow_dispatch:
 
-
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # Required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +30,9 @@ jobs:
       - name: dotnet publish
         run: dotnet publish Backend/CertAtheon.csproj -c Release -o myapp
 
+      - name: Zip published files
+        run: Compress-Archive -Path myapp/* -DestinationPath myapp.zip
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -44,8 +46,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write # Required for requesting the JWT
+      contents: read # Required for actions/checkout
 
     steps:
       - name: Download artifact from build job
@@ -53,13 +55,13 @@ jobs:
         with:
           name: .net-app
           path: .
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_09A642906C8244E89C903C58D19DB702 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_ED0D535930104AD3A4C30FD479317971 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_AAD5149D52B84762BEC3B5A28B8B19DE }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -67,7 +69,4 @@ jobs:
         with:
           app-name: 'cs590-cert-webapp'
           slot-name: 'Production'
-          package: .
-
-
-          
+          package: myapp.zip
