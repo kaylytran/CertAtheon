@@ -1,23 +1,23 @@
-import { defineConfig } from './node_modules/vite/dist/node'
-import react from './node_modules/@vitejs/plugin-react/dist/index.d.mts'
+const react = require('./node_modules/@vitejs/plugin-react/dist/index.d.mts').default;
+const { defineConfig } = require('./node_modules/vite/dist/node');
 
-export default defineConfig({
+module.exports = defineConfig({
+    root: './Frontend', // Ensure this matches your actual directory name
     plugins: [react()],
     server: {
-        port: 5173, // ✅ Change the port so it doesn't conflict with ASP.NET Core
+        port: 5173,
         proxy: {
             "/api": {
-                target: "http://localhost:5000", // ✅ Proxy API calls to ASP.NET Core backend
+                target: "http://localhost:5000",
                 changeOrigin: true,
                 secure: false,
             }
         }
     },
-    root: './Frontend',  // ✅ Ensures Vite looks in frontend/
     build: {
         outDir: "dist",
         rollupOptions: {
-            input: './Frontend/index.html', // ✅ Explicitly define entry
+            input: './Frontend/index.html',
         }
     }
-})
+});
