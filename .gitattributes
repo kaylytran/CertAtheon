@@ -1,0 +1,15 @@
+# Ensure all text files use LF in the repo but keep CRLF on Windows
+* text=auto
+
+# Force specific file types to use LF (Unix-style)
+*.csproj text eol=lf
+*.cs text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.cjs text eol=lf
+
+# Keep Windows-style for specific files if needed
+*.bat text eol=crlf
