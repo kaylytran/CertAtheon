@@ -25,6 +25,9 @@ jobs:
       - name: Build solution
         run: dotnet build Backend/ --configuration Release --no-restore
 
+      - name: Publish .NET app
+        run: dotnet publish Backend/ -c Release -o publish
+
       - name: Run tests (optional)
         run: dotnet test Backend/ --no-build --verbosity normal
         continue-on-error: true # Optional: don't block deployment if tests fail
