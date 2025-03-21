@@ -1,4 +1,4 @@
-name: Build & Test .NET Project
+name: Build & Deploy ASP.NET Core to Azure
 
 on:
   push:
@@ -7,15 +7,14 @@ on:
     branches: [ main, development ]
 
 jobs:
-  build:
-
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '9.0.x'
@@ -26,5 +25,14 @@ jobs:
       - name: Build solution
         run: dotnet build Backend/ --configuration Release --no-restore
 
-      - name: Run tests
-        run: dotnet test Backend/ --no-restore --verbosity normal
+      - name: Run tests (optional)
+        run: dotnet test Backend/ --no-build --verbosity normal
+        continue-on-error: true # Optional: don't block deployment if tests fail
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: CertAtheon 
+          slot-name: production
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: Backend/

@@ -1,36 +1,36 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-name: Build and deploy ASP.Net Core app to Azure Web App
+# # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# # More GitHub Actions for Azure: https://github.com/Azure/actions
+# name: Build and deploy ASP.Net Core app to Azure Web App
 
-on:
-  push:
-    branches: [ main, development ]
-  pull_request:
-    branches: [ main, development ]
+# on:
+#   push:
+#     branches: [ main, development ]
+#   pull_request:
+#     branches: [ main, development ]
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: 🧰 Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '9.0.x'  # Use your target version
+#       - name: Set up .NET
+#         uses: actions/setup-dotnet@v3
+#         with:
+#           dotnet-version: '9.0.x'  
 
-      - name: 🛠️ Restore dependencies
-        run: dotnet restore Backend/
+#       - name: Restore dependencies
+#         run: dotnet restore Backend/
 
-      - name: 🧪 Build app
-        run: dotnet build Backend/ --configuration Release --no-restore
+#       - name: Build app
+#         run: dotnet build Backend/ --configuration Release --no-restore
 
-      - name: 🚀 Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: YOUR_AZURE_APP_SERVICE_NAME       # 👈 e.g., certtracker-backend
-          slot-name: production
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
-          package: Backend/
+#       - name: Deploy to Azure Web App
+#         uses: azure/webapps-deploy@v3
+#         with:
+#           app-name: YOUR_AZURE_APP_SERVICE_NAME       
+#           slot-name: production
+#           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BE3F80DD1F3C46AFA4474BC175935A84 }}
+#           package: Backend/
