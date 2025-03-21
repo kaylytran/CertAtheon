@@ -26,7 +26,7 @@ var app = builder.Build();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.UseCors("AllowFrontend");
+app.MapFallbackToFile("index.html");
 
 if (app.Environment.IsDevelopment())
 {
