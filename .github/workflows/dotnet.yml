@@ -36,11 +36,11 @@ jobs:
           mkdir -p Backend/ClientApp
           cp -r Frontend/dist/* Backend/ClientApp/
 
-      - name: List published files
-        run: ls -R publish/
-        
       - name: Publish .NET app **after frontend is copied**
         run: dotnet publish Backend/ -c Release -o publish
+
+      - name: List published files
+        run: ls -R publish/
 
       - name: Run tests (optional)
         run: dotnet test Backend/ --no-build --verbosity normal
