@@ -22,7 +22,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Backend/
 
-      - name: Build solution
+      - name: Build App
         run: dotnet build Backend/ --configuration Release --no-restore
 
       - name: Build Frontend
