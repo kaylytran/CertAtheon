@@ -38,7 +38,7 @@ jobs:
           cd Frontend
           npm ci
           npm run build
-          npm run build
+          npm run dev
 
       - name: Publish .NET app
         run: dotnet publish Backend/ -c Release -o publish
