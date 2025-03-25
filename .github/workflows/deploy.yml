@@ -1,0 +1,58 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      artifact-path: ${{ steps.publish.outputs.artifact-path }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      
+      - name: Build
+        run: dotnet build --configuration Release
+      
+      - name: Publish
+        id: publish
+        run: |
+          dotnet publish -c Release -o ./publish
+          Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
+          echo "artifact-path=./app.zip" >> $GITHUB_OUTPUT
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-package
+          path: ./app.zip
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-package
+          path: ./deploy
+      
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'CSCE590'
+          slot-name: 'Production'
+          package: ./deploy/app.zip
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}

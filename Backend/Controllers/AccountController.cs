@@ -19,7 +19,7 @@ namespace Backend.Controllers
 
         // GET: /Account/Login
         [HttpGet]
-        public IActionResult Login(string returnUrl = null)
+        public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -27,7 +27,7 @@ namespace Backend.Controllers
 
         // POST: /Account/Login
         [HttpPost]
-        public async Task<IActionResult> Login(string email, string password, string returnUrl = null)
+        public async Task<IActionResult> Login(string email, string password, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
