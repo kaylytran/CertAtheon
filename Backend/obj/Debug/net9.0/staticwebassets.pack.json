@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/assets/index-BGsfD96u.css",
+      "PackagePath": "staticwebassets/assets/index-BGsfD96u.css"
+    },
+    {
+      "Id": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/assets/index-CV-gzGZF.js",
+      "PackagePath": "staticwebassets/assets/index-CV-gzGZF.js"
+    },
+    {
+      "Id": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/index.html",
+      "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/routes.json",
+      "PackagePath": "staticwebassets/routes.json"
+    },
+    {
+      "Id": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/vite.svg",
+      "PackagePath": "staticwebassets/vite.svg"
+    },
+    {
+      "Id": "obj/Debug/net9.0/staticwebassets/msbuild.Backend.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj/Debug/net9.0/staticwebassets/msbuild.Backend.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net9.0/staticwebassets/msbuild.build.Backend.props",
+      "PackagePath": "build\\Backend.props"
+    },
+    {
+      "Id": "obj/Debug/net9.0/staticwebassets/msbuild.buildMultiTargeting.Backend.props",
+      "PackagePath": "buildMultiTargeting\\Backend.props"
+    },
+    {
+      "Id": "obj/Debug/net9.0/staticwebassets/msbuild.buildTransitive.Backend.props",
+      "PackagePath": "buildTransitive\\Backend.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
