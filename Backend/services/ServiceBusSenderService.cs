@@ -15,11 +15,6 @@ namespace Backend.Services
     {
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
-        public ServiceBusSenderService(ServiceBusClient client, ServiceBusSender sender)
-        {
-            _client = client ?? throw new ArgumentNullException(nameof(client));
-            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
-        }
         private readonly ILogger<ServiceBusSenderService> _logger;
         private readonly bool _isMessagingEnabled;
 

@@ -52,6 +52,10 @@
               "target": "Package",
               "version": "[9.0.3, )"
             },
+            "Microsoft.AspNetCore.Cors": {
+              "target": "Package",
+              "version": "[2.3.0, )"
+            },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.0.3, )"
@@ -68,25 +72,19 @@
               "target": "Package",
               "version": "[9.0.3, )"
             },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.3, )"
+            },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[9.0.3, )"
             },
-            "Microsoft.Extensions.FileProviders.Physical": {
-              "target": "Package",
-              "version": "[9.0.3, )"
-            },
-            "Microsoft.Extensions.Logging.AzureAppServices": {
-              "target": "Package",
-              "version": "[6.0.10, )"
-            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[8.0.0, )"
-            },
-            "System.Diagnostics.Process": {
-              "target": "Package",
-              "version": "[4.3.0, )"
             }
           },
           "imports": [

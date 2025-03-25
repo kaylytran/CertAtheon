@@ -1,69 +1,61 @@
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileProviders;
 using System.Diagnostics;
+using Backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-// Configure CORS
+// Enable CORS for frontend communication
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+    options.AddPolicy("AllowFrontend",
+        policy => policy.WithOrigins("http://localhost:5173")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
 });
+
+// Register the database
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-// Middleware pipeline
-app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseCors("AllowFrontend");
 
-// Static files configuration
-var clientAppPath = Path.Combine(app.Environment.ContentRootPath, "ClientApp");
-var fileProvider = new PhysicalFileProvider(clientAppPath);
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = fileProvider,
-    ContentTypeProvider = new FileExtensionContentTypeProvider(),
-    RequestPath = ""
-});
-
-// Enable CORS
-app.UseCors("AllowAll");
-
-// API routing
-app.MapControllers();
-
-// SPA fallback routing - MUST COME LAST
-app.MapFallbackToFile("index.html", new StaticFileOptions
-{
-    FileProvider = fileProvider
-});
-
-// Development configuration
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-    
-    // Launch Vite dev server
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    // Automatically launch Vite frontend
     var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
     if (Directory.Exists(frontendPath))
     {
-        Process.Start(new ProcessStartInfo
+        Console.WriteLine("\n> Starting Vite Dev Server...");
+        var viteProcess = new ProcessStartInfo
         {
             FileName = "npm",
             Arguments = "run dev",
             WorkingDirectory = frontendPath,
-            UseShellExecute = false
-        });
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = false
+        };
+
+        var process = Process.Start(viteProcess);
+        process.OutputDataReceived += (sender, args) => { if (args.Data != null) Console.WriteLine(args.Data); };
+        process.BeginOutputReadLine();
     }
 }
 
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 app.Run();
