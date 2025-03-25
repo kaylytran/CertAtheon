@@ -1,0 +1,45 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Backend/CertAtheon.csproj
+
+      - name: Build
+        run: dotnet build Backend/CertAtheon.csproj --configuration Release --no-restore
+
+      # Only include if you have tests
+      - name: Run tests
+        run: dotnet test Backend/CertAtheon.csproj --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish Backend/CertAtheon.csproj -c Release -o ${{ github.workspace }}/publish
+
+      - name: Zip artifacts
+        run: Compress-Archive -Path ${{ github.workspace }}/publish/* -DestinationPath ${{ github.workspace }}/app.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-artifact
+          path: ${{ github.workspace }}/app.zip
