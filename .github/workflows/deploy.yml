@@ -2,7 +2,9 @@ name: Deploy to Azure
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +22,7 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build  # Now valid since we have an independent job
-    environment: Production
+    slot: Production
     steps:
       # Your existing deploy steps here
       - uses: actions/download-artifact@v4
