@@ -24,4 +24,23 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
   </ItemGroup>
 
+  <Target Name="CopyFrontendDist" AfterTargets="Build">
+    <!-- Build the frontend -->
+    <Exec Command="npm install" WorkingDirectory="../Frontend" />
+    <Exec Command="npm run build" WorkingDirectory="../Frontend" />
+
+    <!-- Clean old files -->
+    <RemoveDir Directories="wwwroot" />
+
+    <!-- Copy new files -->
+    <MakeDir Directories="wwwroot" />
+    <Copy SourceFiles="@(FrontendDistFiles)" DestinationFolder="wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
+
+  </Target>
+
+  <ItemGroup>
+    <FrontendDistFiles Include="..\Frontend\dist\**\*" />
+  </ItemGroup>
+
+
 </Project>

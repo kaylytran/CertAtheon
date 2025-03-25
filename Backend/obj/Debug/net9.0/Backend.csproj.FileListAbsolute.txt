@@ -180,3 +180,4 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.genruntimeconfig.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/ref/Backend.dll
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
+/Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.staticwebassets.runtime.json

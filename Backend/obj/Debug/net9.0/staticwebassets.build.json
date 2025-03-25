@@ -1,12 +1,20 @@
 {
   "Version": 1,
-  "Hash": "+8gz7rjoDcLSTM7Kwf5qkbapKXDd97xhyAb9pxhYrew=",
+  "Hash": "sHPvfh4o5UAZfq5PH4kvef7F7w/kWeqhpoVYH8zxRuU=",
   "Source": "Backend",
   "BasePath": "_content/Backend",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "Backend/wwwroot",
+      "Source": "Backend",
+      "ContentRoot": "/Users/kaylytran/Desktop/CertAtheon/Backend/wwwroot/",
+      "BasePath": "_content/Backend",
+      "Pattern": "**"
+    }
+  ],
   "Assets": [],
   "Endpoints": []
 }
