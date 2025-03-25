@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: '20' # or your preferred LTS version
           cache: 'npm'
+          cache-dependency-path: 'Frontend/package-lock.json'
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
