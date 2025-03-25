@@ -163,7 +163,6 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.CoreCompileInputs.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cs
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cache
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/scopedcss/bundle/Backend.styles.css
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.build.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.development.json
@@ -180,3 +179,4 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.pdb
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.genruntimeconfig.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/ref/Backend.dll
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
