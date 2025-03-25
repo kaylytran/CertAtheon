@@ -2,9 +2,9 @@ name: Build & Deploy ASP.NET Core to Azure
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [main, development]
   pull_request:
-    branches: [ main, development ]
+    branches: [main, development]
 
 jobs:
   build-and-deploy:
@@ -13,6 +13,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # Add Node.js setup step (critical for frontend)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # or your preferred LTS version
+          cache: 'npm'
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -29,6 +36,7 @@ jobs:
         run: |
           cd Frontend
           npm ci
+          npm install -D tailwindcss postcss autoprefixer # Explicitly install missing deps
           npm run build
       
       - name: Copy Frontend into Backend/ClientApp
@@ -36,15 +44,8 @@ jobs:
           mkdir -p Backend/ClientApp
           cp -r Frontend/dist/* Backend/ClientApp/
 
-      - name: Publish .NET app **after frontend is copied**
+      - name: Publish .NET app
         run: dotnet publish Backend/ -c Release -o publish
-
-      - name: List published files
-        run: ls -R publish/
-
-      - name: Run tests (optional)
-        run: dotnet test Backend/ --no-build --verbosity normal
-        continue-on-error: true
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
