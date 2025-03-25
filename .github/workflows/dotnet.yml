@@ -37,7 +37,6 @@ jobs:
         run: |
           cd Frontend
           npm ci
-          npm install -D tailwindcss postcss # Explicitly install missing deps
           npm run build
       
       - name: Copy Frontend into Backend/ClientApp
