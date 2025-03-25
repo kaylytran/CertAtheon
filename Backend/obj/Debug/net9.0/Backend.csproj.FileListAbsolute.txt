@@ -1,5 +1,6 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/appsettings.Development.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/appsettings.json
+/Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.staticwebassets.runtime.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.staticwebassets.endpoints.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.deps.json
@@ -163,7 +164,9 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.CoreCompileInputs.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cs
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cache
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/scopedcss/bundle/Backend.styles.css
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/compressed/8kfsz6facl-cuhq6xd8eq.gz
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.build.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.development.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.build.endpoints.json
@@ -179,5 +182,7 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.pdb
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.genruntimeconfig.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/ref/Backend.dll
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
-/Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.staticwebassets.runtime.json
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/compressed/k32cqtwzzm-p2f43lmsa1.gz
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/compressed/for7mogo9r-m9bexbatv8.gz
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/compressed/u3udyxr2tp-5ipweew5fc.gz
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/compressed/8ri9o4lgva-69kjnsiwqx.gz
