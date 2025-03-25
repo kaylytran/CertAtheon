@@ -28,7 +28,7 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore Backend/
+        run: dotnet restore Backend/Backend.csproj
 
       - name: Build App
         run: dotnet build Backend/ --configuration Release --no-restore

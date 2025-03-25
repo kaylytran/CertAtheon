@@ -1,3 +1,11 @@
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.AssemblyReference.cache
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.GeneratedMSBuildEditorConfig.editorconfig
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.AssemblyInfoInputs.cache
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.AssemblyInfo.cs
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.CoreCompileInputs.cache
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cs
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cache
+/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/appsettings.Development.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/appsettings.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/Backend.staticwebassets.endpoints.json
@@ -156,13 +164,6 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/runtimes/win/lib/net6.0/System.Runtime.Caching.dll
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/runtimes/win/lib/net6.0/System.Security.Cryptography.ProtectedData.dll
 /Users/kaylytran/Desktop/CertAtheon/Backend/bin/Debug/net9.0/runtimes/win/lib/net6.0/System.Windows.Extensions.dll
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.AssemblyReference.cache
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.GeneratedMSBuildEditorConfig.editorconfig
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.AssemblyInfoInputs.cache
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.AssemblyInfo.cs
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.csproj.CoreCompileInputs.cache
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cs
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.MvcApplicationPartsAssemblyInfo.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/scopedcss/bundle/Backend.styles.css
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.build.json
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/staticwebassets.development.json
@@ -179,4 +180,3 @@
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.pdb
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.genruntimeconfig.cache
 /Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/ref/Backend.dll
-/Users/kaylytran/Desktop/CertAtheon/Backend/obj/Debug/net9.0/Backend.sourcelink.json

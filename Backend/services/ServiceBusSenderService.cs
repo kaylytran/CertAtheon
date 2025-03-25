@@ -13,8 +13,8 @@ namespace Backend.Services
 
     public class ServiceBusSenderService : IMessageSenderService, IAsyncDisposable
     {
-        private readonly ServiceBusClient _client;
-        private readonly ServiceBusSender _sender;
+        private readonly ServiceBusClient _client = null;
+        private readonly ServiceBusSender _sender = null;
         private readonly ILogger<ServiceBusSenderService> _logger;
         private readonly bool _isMessagingEnabled;
 
