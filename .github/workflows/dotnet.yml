@@ -38,11 +38,7 @@ jobs:
           cd Frontend
           npm ci
           npm run build
-      
-      - name: Copy Frontend into Backend/ClientApp
-        run: |
-          mkdir -p Backend/ClientApp
-          cp -r Frontend/dist/* Backend/ClientApp/
+          npm run build
 
       - name: Publish .NET app
         run: dotnet publish Backend/ -c Release -o publish
