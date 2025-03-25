@@ -41,7 +41,6 @@ jobs:
           cd Frontend
           npm ci
           npm run build
-        working-directory: Frontend
 
       # Optional: Add test steps here
       # - name: Run tests
