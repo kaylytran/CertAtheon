@@ -28,4 +28,3 @@ dist-ssr
 # Ignore build output
 bin/
 obj/
-.fake
