@@ -3,9 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Home from './components/Home';
 import Login from './components/Login';
 import Profile from './components/Profile';
-import Register from './components/Register';
 import CertificateCatalog from './components/CertificateCatalog';
-import ChangePassword from './components/changePassword';
 
 function App() {
     return (
@@ -15,8 +13,6 @@ function App() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/catalog" element={<CertificateCatalog />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/changepassword" element={<ChangePassword />} />
             </Routes>
         </BrowserRouter>
     );
