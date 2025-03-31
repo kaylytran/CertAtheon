@@ -5498,24 +5498,32 @@
     ]
   },
   "packageFolders": {
-    "/Users/kaylytran/.nuget/packages/": {}
+    "C:\\Users\\lilmo\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/kaylytran/Desktop/CertAtheon/Backend/Backend.csproj",
+      "projectUniqueName": "C:\\Users\\lilmo\\Desktop\\CertAtheon\\Backend\\Backend.csproj",
       "projectName": "Backend",
-      "projectPath": "/Users/kaylytran/Desktop/CertAtheon/Backend/Backend.csproj",
-      "packagesPath": "/Users/kaylytran/.nuget/packages/",
-      "outputPath": "/Users/kaylytran/Desktop/CertAtheon/Backend/obj/",
+      "projectPath": "C:\\Users\\lilmo\\Desktop\\CertAtheon\\Backend\\Backend.csproj",
+      "packagesPath": "C:\\Users\\lilmo\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\lilmo\\Desktop\\CertAtheon\\Backend\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "/Users/kaylytran/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\lilmo\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -5602,7 +5610,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.200/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

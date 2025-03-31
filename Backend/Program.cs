@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Backend.Data;
+using Backend.Models; // Add this for ApplicationUser
+using Microsoft.AspNetCore.Identity; // Add this for Identity services
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configure Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
 var app = builder.Build();
 
 app.UseDefaultFiles();
@@ -34,7 +41,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 
     // Automatically launch Vite frontend
-    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");
@@ -56,6 +63,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication(); // Add this to enable authentication middleware
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
