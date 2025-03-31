@@ -5498,24 +5498,25 @@
     ]
   },
   "packageFolders": {
-    "/Users/kaylytran/.nuget/packages/": {}
+    "/home/kasra/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/kaylytran/Desktop/CertAtheon/Backend/Backend.csproj",
+      "projectUniqueName": "/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/Backend.csproj",
       "projectName": "Backend",
-      "projectPath": "/Users/kaylytran/Desktop/CertAtheon/Backend/Backend.csproj",
-      "packagesPath": "/Users/kaylytran/.nuget/packages/",
-      "outputPath": "/Users/kaylytran/Desktop/CertAtheon/Backend/obj/",
+      "projectPath": "/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/Backend.csproj",
+      "packagesPath": "/home/kasra/.nuget/packages/",
+      "outputPath": "/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/kaylytran/.nuget/NuGet/NuGet.Config"
+        "/home/kasra/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -5534,7 +5535,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net9.0": {
@@ -5602,7 +5603,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.200/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.104/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
