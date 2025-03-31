@@ -12,5 +12,9 @@ namespace Backend.Data
         }
 
         public DbSet<Certificate> Certificates { get; set; }
+
+        // DbSet for the certificate catalog.
+        public DbSet<CertificateCatalog> CertificateCatalogs { get; set; }
+
     }
 }
