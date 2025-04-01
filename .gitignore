@@ -35,6 +35,9 @@ build/
 **/obj/
 **/wwwroot/
 
-# Env files
-.env
-.env.*
+# Ignore build output
+bin/
+obj/
+
+# Backend configs
+.prev-migrations
