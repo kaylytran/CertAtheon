@@ -1,16 +1,17 @@
 using System.Diagnostics;
 using Backend.Data;
-using Backend.Models; // Add this for ApplicationUser
-using Microsoft.AspNetCore.Identity; // Add this for Identity services
+using Backend.Models;
+using Backend.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add controllers.
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Enable CORS for frontend communication
+// Enable CORS for frontend communication.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -20,17 +21,63 @@ builder.Services.AddCors(options =>
                         .AllowCredentials());
 });
 
-// Register the database
+// Register EF Core with SQL Server using the DefaultConnection string.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection")));
 
-// Configure Identity
+// Register Identity services.
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// Configure cookie settings for authentication.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+// Register our Azure Service Bus messaging service as a singleton.
+builder.Services.AddSingleton<IMessageSenderService, ServiceBusSenderService>();
+
+// Configure Swagger with Bearer security.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "CertAethon API",
+        Version = "v1"
+    });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please insert JWT with Bearer into field. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 var app = builder.Build();
 
+// Serve default files and static files, and use the defined CORS policy.
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("AllowFrontend");
@@ -40,8 +87,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    // Automatically launch Vite frontend
-    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
+    // Automatically launch Vite frontend if present.
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");
@@ -57,13 +104,20 @@ if (app.Environment.IsDevelopment())
         };
 
         var process = Process.Start(viteProcess);
-        process.OutputDataReceived += (sender, args) => { if (args.Data != null) Console.WriteLine(args.Data); };
+        process.OutputDataReceived += (sender, args) =>
+        {
+            if (args.Data != null) Console.WriteLine(args.Data);
+        };
         process.BeginOutputReadLine();
     }
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); // Add this to enable authentication middleware
+
+// IMPORTANT: Use Authentication before Authorization.
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
