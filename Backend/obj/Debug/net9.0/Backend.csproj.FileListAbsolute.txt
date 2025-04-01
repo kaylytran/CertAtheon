@@ -374,3 +374,6 @@
 /media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/obj/Debug/net9.0/compressed/8ri9o4lgva-69kjnsiwqx.gz
 /media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/obj/Debug/net9.0/Backend.RazorAssemblyInfo.cache
 /media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/obj/Debug/net9.0/Backend.RazorAssemblyInfo.cs
+/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/bin/Debug/net9.0/Azure.Storage.Blobs.dll
+/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/bin/Debug/net9.0/Azure.Storage.Common.dll
+/media/kasra/my_files1/university/courses/Azure-cloud-native-development/projects/CertAtheon/Backend/bin/Debug/net9.0/System.IO.Hashing.dll
