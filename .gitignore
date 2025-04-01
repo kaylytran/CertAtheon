@@ -28,3 +28,6 @@ dist-ssr
 # Ignore build output
 bin/
 obj/
+
+# Backend configs
+.prev-migrations
