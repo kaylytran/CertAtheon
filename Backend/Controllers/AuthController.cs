@@ -1,7 +1,14 @@
 using Backend.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers
 {
@@ -11,11 +18,18 @@ namespace Backend.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
         
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public AuthController(UserManager<ApplicationUser> userManager, 
+                              SignInManager<ApplicationUser> signInManager,
+                              IConfiguration configuration,
+                              ILogger<AuthController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _configuration = configuration;
+            _logger = logger;
         }
         
         // POST: api/auth/register
@@ -31,14 +45,14 @@ namespace Backend.Controllers
                 Email = request.Email, 
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                MustChangePassword = true,
+                MustChangePassword = false,
                 AppRole = "Employee"
             };
             var result = await _userManager.CreateAsync(user, request.Password);
             if (result.Succeeded)
             {
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return Ok(new { message = "Registration successful. Please change your password on first login." });
+                return Ok(new { message = "Registration successful." });
             }
             return BadRequest(result.Errors);
         }
@@ -50,24 +64,40 @@ namespace Backend.Controllers
             if (request == null)
                 return BadRequest("Invalid login request.");
             
-            var result = await _signInManager.PasswordSignInAsync(request.Email, request.Password, false, lockoutOnFailure: false);
-            if (result.Succeeded)
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
             {
-                var user = await _userManager.FindByEmailAsync(request.Email);
-                return Ok(new 
-                { 
-                    message = "Login successful", 
-                    mustChangePassword = user.MustChangePassword 
-                });
+                _logger.LogWarning("Login failed: user not found for email {Email}", request.Email);
+                return Unauthorized(new { message = "Invalid login attempt." });
             }
-            return Unauthorized(new { message = "Invalid login attempt." });
+            
+            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning("Login failed for email {Email}: invalid credentials", request.Email);
+                return Unauthorized(new { message = "Invalid login attempt." });
+            }
+            
+            // Generate JWT token
+            var token = GenerateJwtToken(user);
+            
+            _logger.LogInformation("User {Email} logged in successfully.", request.Email);
+            return Ok(new 
+            { 
+                message = "Login successful", 
+                token = token,
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                email = user.Email,
+                appRole = user.AppRole,
+                mustChangePassword = user.MustChangePassword
+            });
         }
         
         // POST: api/auth/change-password
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            // Get the currently signed-in user
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Unauthorized();
@@ -88,6 +118,34 @@ namespace Backend.Controllers
         {
             await _signInManager.SignOutAsync();
             return Ok(new { message = "Logged out successfully." });
+        }
+        
+        private string GenerateJwtToken(ApplicationUser user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+            
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim("FirstName", user.FirstName),
+                new Claim("LastName", user.LastName),
+                new Claim("AppRole", user.AppRole)
+            };
+            
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
     
