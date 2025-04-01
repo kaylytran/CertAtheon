@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const CertificationDashboard = () => {
+const Home = () => {
     const navigate = useNavigate();
-    const [certifications, setCertifications] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [currentCert, setCurrentCert] = useState(null);
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [userRole, setUserRole] = useState('');
+    const [myCertifications, setMyCertifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [formData, setFormData] = useState({
         certification: "",
         certifiedDate: "",
@@ -16,26 +20,160 @@ const CertificationDashboard = () => {
         level: ""
     });
 
-    // Fetch certifications from API
-    useEffect(() => {
-        const fetchCertifications = async () => {
-            try {
-                setLoading(true);
-                // Replace with actual API call when backend is ready
-                // const response = await fetch('/api/certifications');
-                // const data = await response.json();
-                // setCertifications(data);
-                console.log("Will fetch certifications from API");
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching certifications:", err);
-                setError("Failed to load certifications");
-                setLoading(false);
-            }
-        };
+    const url = 'http://localhost:5282';
 
-        fetchCertifications();
-    }, []);
+    // Debug function for user data
+    const debugUserInfo = () => {
+        console.group("User Info Debug");
+        console.log("firstName from state:", firstName);
+        console.log("lastName from state:", lastName);
+        console.log("userRole from state:", userRole);
+        console.log("localStorage firstName:", localStorage.getItem('firstName'));
+        console.log("localStorage lastName:", localStorage.getItem('lastName'));
+        console.log("localStorage userRole:", localStorage.getItem('userRole'));
+        console.log("localStorage appRole:", localStorage.getItem('appRole'));
+        console.log("localStorage email:", localStorage.getItem('email'));
+
+        try {
+            const authStr = localStorage.getItem('authResponse');
+            if (authStr) {
+                const auth = JSON.parse(authStr);
+                console.log("authResponse object:", auth);
+            }
+        } catch (err) {
+            console.error("Error parsing authResponse:", err);
+        }
+        console.groupEnd();
+    };
+
+    // Get user information from localStorage
+    useEffect(() => {
+        // Run debugging on mount
+        debugUserInfo();
+
+        // Check if user is logged in
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const token = localStorage.getItem('token');
+
+        if (!isLoggedIn || !token) {
+            navigate('/');
+            return;
+        }
+
+        // Load user data - DIRECT assignment, not setState
+        const storedFirstName = localStorage.getItem('firstName');
+        const storedLastName = localStorage.getItem('lastName');
+
+        // Check which role field is available - 'userRole' or 'appRole'
+        let role = localStorage.getItem('userRole');
+        if (!role || role === 'null') {
+            role = localStorage.getItem('appRole');
+        }
+
+        // Try to get values from authResponse as a fallback
+        try {
+            const authResponseStr = localStorage.getItem('authResponse');
+            if (authResponseStr) {
+                const authResponse = JSON.parse(authResponseStr);
+
+                // Set states only if we have real values
+                if (storedFirstName) {
+                    setFirstName(storedFirstName);
+                } else if (authResponse.firstName) {
+                    setFirstName(authResponse.firstName);
+                }
+
+                if (storedLastName) {
+                    setLastName(storedLastName);
+                } else if (authResponse.lastName) {
+                    setLastName(authResponse.lastName);
+                }
+
+                // Get role from authResponse if not found in localStorage
+                if (!role && authResponse.appRole) {
+                    role = authResponse.appRole;
+                }
+            }
+        } catch (err) {
+            console.error("Error parsing authResponse:", err);
+        }
+
+        // Finally set the role state
+        if (role) {
+            setUserRole(role);
+        }
+
+        // Fetch user's certifications
+        fetchMyCertifications();
+
+        // Log debug info again after setting state
+        setTimeout(debugUserInfo, 1000);
+    }, [navigate]);
+
+    // Fetch the current user's certifications
+    const fetchMyCertifications = async () => {
+        try {
+            setLoading(true);
+            const email = localStorage.getItem('email');
+            if (!email) {
+                console.warn("User email not found");
+                setLoading(false);
+                return;
+            }
+
+            // Try different possible endpoints
+            let response;
+            try {
+                response = await axios.get(`${url}/api/User/certifications`);
+            } catch (firstError) {
+                console.log("First attempt failed, trying alternative endpoint");
+                try {
+                    response = await axios.get(`${url}/User/certifications`);
+                } catch (secondError) {
+                    // Last attempt with email parameter
+                    response = await axios.get(`${url}/api/Certification/user?email=${encodeURIComponent(email)}`);
+                }
+            }
+
+            setMyCertifications(response.data || []);
+            setLoading(false);
+        } catch (err) {
+            console.error("Error fetching certifications:", err);
+            setLoading(false);
+        }
+    };
+
+    // Check if user is admin or manager - more robust check
+    const isAdminOrManager = () => {
+        // First check state
+        if (userRole === 'Manager' || userRole === 'Admin') {
+            return true;
+        }
+
+        // Then check localStorage directly (both fields)
+        const storedRole = localStorage.getItem('userRole');
+        const storedAppRole = localStorage.getItem('appRole');
+
+        if (storedRole === 'Manager' || storedRole === 'Admin' ||
+            storedAppRole === 'Manager' || storedAppRole === 'Admin') {
+            return true;
+        }
+
+        // Finally check authResponse
+        try {
+            const authResponseStr = localStorage.getItem('authResponse');
+            if (authResponseStr) {
+                const authResponse = JSON.parse(authResponseStr);
+                if (authResponse.appRole === 'Manager' || authResponse.appRole === 'Admin') {
+                    return true;
+                }
+            }
+        } catch (err) {
+            console.error("Error checking admin status:", err);
+        }
+
+        return false;
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -55,115 +193,74 @@ const CertificationDashboard = () => {
         setShowAddModal(true);
     };
 
-    const handleEdit = (cert) => {
-        setCurrentCert(cert);
-        setFormData({
-            certification: cert.name,
-            certifiedDate: cert.certifiedDate,
-            validThrough: cert.expiryDate,
-            level: cert.level
-        });
-        setShowEditModal(true);
-    };
-
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this certification?")) {
-            try {
-                // Replace with actual API call when backend is ready
-                // await fetch(`/api/certifications/${id}`, {
-                //     method: 'DELETE'
-                // });
-
-                // Update local state after successful API call
-                setCertifications(certifications.filter(cert => cert.id !== id));
-                console.log("Will delete certification via API:", id);
-            } catch (err) {
-                console.error("Error deleting certification:", err);
-                alert("Failed to delete certification");
-            }
-        }
-    };
-
-    const handleSubmitAdd = async (e) => {
-        e.preventDefault();
-
-        try {
-            const newCert = {
-                name: formData.certification,
-                certifiedDate: formData.certifiedDate,
-                level: formData.level,
-                expiryDate: formData.validThrough
-            };
-
-            // Replace with actual API call when backend is ready
-            // const response = await fetch('/api/certifications', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     },
-            //     body: JSON.stringify(newCert)
-            // });
-            // const data = await response.json();
-
-            // For now, simulate a response with a generated ID
-            const mockResponse = {
-                ...newCert,
-                id: Date.now() // Temporary ID generation
-            };
-
-            setCertifications([...certifications, mockResponse]);
-            setShowAddModal(false);
-            console.log("Will add certification via API:", newCert);
-        } catch (err) {
-            console.error("Error adding certification:", err);
-            alert("Failed to add certification");
-        }
-    };
-
-    const handleSubmitEdit = async (e) => {
-        e.preventDefault();
-
-        try {
-            const updatedCert = {
-                id: currentCert.id,
-                name: formData.certification,
-                certifiedDate: formData.certifiedDate,
-                level: formData.level,
-                expiryDate: formData.validThrough
-            };
-
-            // Replace with actual API call when backend is ready
-            // await fetch(`/api/certifications/${currentCert.id}`, {
-            //     method: 'PUT',
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     },
-            //     body: JSON.stringify(updatedCert)
-            // });
-
-            // Update local state after successful API call
-            const updatedCerts = certifications.map(cert => {
-                if (cert.id === currentCert.id) {
-                    return updatedCert;
-                }
-                return cert;
-            });
-
-            setCertifications(updatedCerts);
-            setShowEditModal(false);
-            console.log("Will update certification via API:", updatedCert);
-        } catch (err) {
-            console.error("Error updating certification:", err);
-            alert("Failed to update certification");
-        }
-    };
-
     const navigateToProfile = () => {
         navigate('/profile');
     };
 
     const navigateToCatalog = () => {
         navigate('/catalog');
+    };
+
+    const navigateToAdmin = () => {
+        navigate('/admin');
+    };
+
+    const navigateToEmployees = () => {
+        navigate('/admin');
+    };
+
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/');
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    };
+
+    // Calculate if a certificate is expired or expiring soon (within 30 days)
+    const getCertificateStatus = (expiryDate) => {
+        if (!expiryDate) return { status: 'Unknown', className: 'bg-gray-100 text-gray-800' };
+
+        const today = new Date();
+        const expiry = new Date(expiryDate);
+        const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+
+        if (daysUntilExpiry < 0) {
+            return { status: 'Expired', className: 'bg-red-100 text-red-800' };
+        } else if (daysUntilExpiry < 30) {
+            return { status: 'Expiring Soon', className: 'bg-yellow-100 text-yellow-800' };
+        } else {
+            return { status: 'Valid', className: 'bg-green-100 text-green-800' };
+        }
+    };
+
+    // Get a user display name with fallbacks
+    const getUserDisplayName = () => {
+        if (firstName && lastName) {
+            return `${firstName} ${lastName}`;
+        } else if (firstName) {
+            return firstName;
+        } else if (lastName) {
+            return lastName;
+        }
+
+        // Check localStorage directly as a fallback
+        const storedFirstName = localStorage.getItem('firstName');
+        const storedLastName = localStorage.getItem('lastName');
+
+        if (storedFirstName && storedLastName) {
+            return `${storedFirstName} ${storedLastName}`;
+        } else if (storedFirstName) {
+            return storedFirstName;
+        } else if (storedLastName) {
+            return storedLastName;
+        }
+
+        // Last fallback - use email or just "User"
+        return localStorage.getItem('email') || 'User';
     };
 
     const Modal = ({ isOpen, onClose, title, onSubmit, children }) => {
@@ -263,6 +360,15 @@ const CertificationDashboard = () => {
                     >
                         Certificate Catalog
                     </button>
+                    {/* Add Employees tab for admin/manager */}
+                    {isAdminOrManager() && (
+                        <button
+                            className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
+                            onClick={navigateToEmployees}
+                        >
+                            Employees
+                        </button>
+                    )}
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
@@ -272,11 +378,11 @@ const CertificationDashboard = () => {
                             className="rounded-full w-10 h-10 cursor-pointer"
                             onClick={navigateToProfile}
                         />
-                        <span>User</span>
+                        <span>{getUserDisplayName()}</span>
                     </div>
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
-                        onClick={() => navigate('/')}
+                        onClick={handleLogout}
                     >
                         Logout
                     </button>
@@ -287,7 +393,7 @@ const CertificationDashboard = () => {
             <main className="px-4 py-8 mx-auto max-w-7xl">
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">Certifications</h2>
+                        <h2 className="text-xl font-semibold">My Certifications</h2>
                         <button
                             onClick={handleAddNew}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -298,17 +404,7 @@ const CertificationDashboard = () => {
 
                     {loading ? (
                         <div className="flex justify-center items-center py-8">
-                            <p className="text-gray-500">Loading certifications...</p>
-                        </div>
-                    ) : error ? (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                            <p>{error}</p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="mt-2 text-sm underline"
-                            >
-                                Try again
-                            </button>
+                            <p className="text-gray-500">Loading your certifications...</p>
                         </div>
                     ) : (
                         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -328,51 +424,63 @@ const CertificationDashboard = () => {
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Expiry Date
                                             </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status
+                                            </th>
                                             <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {certifications.length > 0 ? (
-                                            certifications.map((cert) => (
-                                                <tr key={cert.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {cert.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {cert.certifiedDate}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {cert.level}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {cert.expiryDate}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button
-                                                                onClick={() => handleEdit(cert)}
-                                                                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                                                            >
-                                                                Modify
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(cert.id)}
-                                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
+                                        {myCertifications.length === 0 ? (
                                             <tr>
-                                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
                                                     No certifications found. Add a new certification to get started.
                                                 </td>
                                             </tr>
+                                        ) : (
+                                            myCertifications.map((cert) => {
+                                                const status = getCertificateStatus(cert.expiryDate);
+                                                return (
+                                                    <tr key={cert.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {cert.name}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {formatDate(cert.certifiedDate)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {cert.level}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {formatDate(cert.expiryDate)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                            <span className={`px-2 py-1 rounded-full text-xs ${status.className}`}>
+                                                                {status.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setCurrentCert(cert);
+                                                                    setFormData({
+                                                                        certification: cert.name,
+                                                                        certifiedDate: new Date(cert.certifiedDate).toISOString().split('T')[0],
+                                                                        validThrough: new Date(cert.expiryDate).toISOString().split('T')[0],
+                                                                        level: cert.level
+                                                                    });
+                                                                    setShowEditModal(true);
+                                                                }}
+                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>
@@ -387,7 +495,13 @@ const CertificationDashboard = () => {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 title="Add New Certificate"
-                onSubmit={handleSubmitAdd}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    // This function would typically add the certificate to the backend
+                    // For now, we're just showing a demo
+                    alert("This is a static demo. Adding certificates is not functional.");
+                    setShowAddModal(false);
+                }}
             >
                 <CertificationForm />
             </Modal>
@@ -396,8 +510,14 @@ const CertificationDashboard = () => {
             <Modal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
-                title="Modify Certificate"
-                onSubmit={handleSubmitEdit}
+                title="Edit Certificate"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    // This function would typically update the certificate in the backend
+                    // For now, we're just showing a demo
+                    alert("This is a static demo. Editing certificates is not functional.");
+                    setShowEditModal(false);
+                }}
             >
                 <CertificationForm />
             </Modal>
@@ -405,4 +525,4 @@ const CertificationDashboard = () => {
     );
 };
 
-export default CertificationDashboard;
+export default Home;
