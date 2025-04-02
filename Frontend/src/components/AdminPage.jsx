@@ -78,28 +78,59 @@ const AdminPage = () => {
         const fetchEmployees = async () => {
             try {
                 setLoading(true);
+                // Clear any previous error message
+                setError(null);
+
                 // Try different possible endpoints
                 let response;
                 try {
                     response = await axios.get(`${url}/api/Admin/employees`);
+                    console.log("Employees data:", response.data);
+                    setEmployees(response.data || []);
                 } catch (firstError) {
                     console.log("First attempt failed, trying alternative endpoint");
-                    response = await axios.get(`${url}/Admin/employees`);
+                    try {
+                        response = await axios.get(`${url}/Admin/employees`);
+                        console.log("Employees data (from alternative endpoint):", response.data);
+                        setEmployees(response.data || []);
+                    } catch (secondError) {
+                        // Specifically check for 404 status and DON'T set error
+                        if (secondError.response && secondError.response.status === 404) {
+                            console.log("No employee data found (404 error)");
+                            // Set empty array but don't set error
+                            setEmployees([]);
+                        } else if (secondError.response && (secondError.response.status === 403 || secondError.response.status === 401)) {
+                            // Only set error for permission issues
+                            setError("You do not have permission to access this page");
+                            // Redirect to home after showing error
+                            setTimeout(() => {
+                                navigate('/home');
+                            }, 2000);
+                        } else {
+                            // For other errors, just log them but don't show to user
+                            console.error("Error fetching employees:", secondError);
+                            // Set empty array
+                            setEmployees([]);
+                        }
+                    }
                 }
-
-                console.log("Employees data:", response.data);
-                setEmployees(response.data);
                 setLoading(false);
             } catch (err) {
-                console.error("Error fetching employees:", err);
-                if (err.response && (err.response.status === 403 || err.response.status === 401)) {
+                console.error("Unexpected error fetching employees:", err);
+                // Handle 404 without error message
+                if (err.response && err.response.status === 404) {
+                    setEmployees([]);
+                    setError(null); // Clear any error message
+                } else if (err.response && (err.response.status === 403 || err.response.status === 401)) {
                     setError("You do not have permission to access this page");
                     // Redirect to home after showing error
                     setTimeout(() => {
                         navigate('/home');
                     }, 2000);
                 } else {
-                    setError("Failed to load employees: " + (err.message || "Unknown error"));
+                    // Don't set error for other cases - just log to console
+                    console.error("Failed to load employees:", err.message || "Unknown error");
+                    setEmployees([]);
                 }
                 setLoading(false);
             }
@@ -107,17 +138,25 @@ const AdminPage = () => {
 
         const fetchAllCertifications = async () => {
             try {
-                // Try different possible endpoints
+                // Try different possible endpoints with api/dashboard instead of api/certificates
                 let response;
                 try {
-                    response = await axios.get(`${url}/api/Certification`);
+                    response = await axios.get(`${url}/api/dashboard`);
                 } catch (firstError) {
                     console.log("First attempt failed, trying alternative endpoint");
-                    response = await axios.get(`${url}/Certification`);
+                    try {
+                        response = await axios.get(`${url}/dashboard`);
+                    } catch (secondError) {
+                        // Don't show errors for 404 - just log them
+                        console.error("Error fetching certifications:", secondError);
+                        setAllCertifications([]);
+                        return;
+                    }
                 }
-                setAllCertifications(response.data);
+                setAllCertifications(response.data || []);
             } catch (err) {
                 console.error("Error fetching certifications:", err);
+                setAllCertifications([]);
             }
         };
 
@@ -598,7 +637,8 @@ const AdminPage = () => {
                         <div className="flex justify-center items-center py-8">
                             <p className="text-gray-500">Loading employees...</p>
                         </div>
-                    ) : error ? (
+                    ) : error && (error.includes("permission") || error.includes("access")) ? (
+                        // Only show error for permission issues
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                             <p>{error}</p>
                             <button
@@ -609,6 +649,7 @@ const AdminPage = () => {
                             </button>
                         </div>
                     ) : (
+                        // Always show table - will display "No employees found" when array is empty
                         <div className="bg-white rounded-lg shadow overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
