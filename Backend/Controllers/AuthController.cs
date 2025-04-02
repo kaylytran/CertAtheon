@@ -132,7 +132,8 @@ namespace Backend.Controllers
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim("FirstName", user.FirstName),
                 new Claim("LastName", user.LastName),
-                new Claim("AppRole", user.AppRole)
+                new Claim("AppRole", user.AppRole),
+                new Claim(ClaimTypes.Role, user.AppRole)
             };
             
             var tokenDescriptor = new SecurityTokenDescriptor
