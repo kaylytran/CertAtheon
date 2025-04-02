@@ -28,8 +28,10 @@ namespace Backend.Controllers
         {
             int targetYear = year ?? DateTime.UtcNow.Year;
             
-            // Retrieve all employees (from Identity's Users table).
-            var employees = await _context.Users.ToListAsync();
+            // Retrieve all employees excluding managers from Identity's Users table.
+            var employees = await _context.Users
+                                          .Where(u => u.AppRole != "Manager")
+                                          .ToListAsync();
             int totalEmployees = employees.Count;
             
             // Retrieve all certificate catalog entries.
@@ -40,7 +42,7 @@ namespace Backend.Controllers
                 .Where(c => c.CertifiedDate.Year == targetYear)
                 .ToListAsync();
             
-            // For each employee and each catalog entry, create a dashboard record.
+            // For each employee (non-manager) and each catalog entry, create a dashboard record.
             var dashboardRecords = employees.SelectMany(emp =>
             {
                 return catalogEntries.Select(catalog =>
@@ -52,7 +54,7 @@ namespace Backend.Controllers
                     {
                         EmployeeId = emp.Id,
                         FullName = $"{emp.FirstName} {emp.LastName}",
-                        Role = emp.AppRole,         // Using the AppRole field from the user.
+                        Role = emp.AppRole,         // Using AppRole from the user.
                         Grade = emp.JobTitle,       // Using JobTitle as Grade.
                         Email = emp.Email,
                         CertificateName = catalog.CertificateName,
@@ -69,8 +71,14 @@ namespace Backend.Controllers
             
             // Calculate overall adoption rate:
             // Count distinct employees with at least one certificate record in the target year.
-            int employeesWithCertificate = certificates.Select(c => c.UserId).Distinct().Count();
-            double adoptionRate = totalEmployees > 0 ? ((double)employeesWithCertificate / totalEmployees) * 100 : 0;
+            int employeesWithCertificate = certificates
+                                               .Where(c => employees.Any(emp => emp.Id == c.UserId))
+                                               .Select(c => c.UserId)
+                                               .Distinct()
+                                               .Count();
+            double adoptionRate = totalEmployees > 0 
+                ? ((double)employeesWithCertificate / totalEmployees) * 100 
+                : 0;
             
             var response = new 
             {
