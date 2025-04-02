@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Backend.Schemas;
 
 namespace Backend.Controllers
 {
@@ -60,16 +61,25 @@ namespace Backend.Controllers
 
         // POST: api/CertificateCatalog
         // Restricted to users with the Manager role.
-        [HttpPost]
+        [HttpPost("add")]
         [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> CreateCatalogItem([FromBody] CertificateCatalog item)
+        public async Task<IActionResult> CreateCatalogItem([FromBody] CertificateCatalogAddRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.CertificateCatalogs.Add(item);
+            
+            var newCertificateCatalog = new CertificateCatalog
+            {
+                CertificateName = request.CertificateName,
+                Category = request.Category,
+                CertificateLevel = request.CertificateLevel,
+                Description = request.Description
+            };
+
+            _context.CertificateCatalogs.Add(newCertificateCatalog);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCatalogItem), new { id = item.Id }, item);
+            return CreatedAtAction(nameof(GetCatalogItem), new { id = newCertificateCatalog.Id }, newCertificateCatalog);
         }
 
         // PUT: api/CertificateCatalog/{id}

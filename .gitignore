@@ -26,8 +26,8 @@ dist-ssr
 **/wwwroot
 
 # Ignore build output
-bin/
-obj/
+*bin/
+*obj/
 
 # Backend configs
 .prev-migrations
