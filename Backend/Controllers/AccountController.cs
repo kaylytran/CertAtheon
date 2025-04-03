@@ -80,7 +80,7 @@ namespace Backend.Controllers
                 Email = email,
                 FirstName = firstName,
                 LastName = lastName,
-                MustChangePassword = true 
+                MustChangePassword = true
             };
 
             var result = await _userManager.CreateAsync(user, password);
@@ -94,7 +94,7 @@ namespace Backend.Controllers
             {
                 ModelState.AddModelError("", error.Description);
             }
-            return View();
+            return BadRequest(result.Errors);
         }
 
         // GET: /Account/ChangePassword
