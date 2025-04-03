@@ -7,6 +7,7 @@ using Backend.Schemas;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Backend.Controllers
 {
@@ -35,12 +36,24 @@ namespace Backend.Controllers
                 return Unauthorized("User ID not found.");
             }
             
-            // Include the catalog details when fetching certificates.
+            // Include CertificateCatalog to obtain CertificateName.
             var certificates = await _context.Certificates
                 .Include(c => c.CertificateCatalog)
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
-            return Ok(certificates);
+
+            // Project each certificate to include CertificateName.
+            var result = certificates.Select(c => new 
+            {
+                c.Id,
+                c.CertificateCatalogId,
+                c.CertifiedDate,
+                c.ValidTill,
+                c.UserId,
+                CertificateName = c.CertificateCatalog != null ? c.CertificateCatalog.CertificateName : null
+            });
+
+            return Ok(result);
         }
         
         // GET: api/certificates/{id}
@@ -55,7 +68,19 @@ namespace Backend.Controllers
                 _logger.LogWarning("Certificate with id {Id} not found.", id);
                 return NotFound();
             }
-            return Ok(certificate);
+            
+            // Create a result object including the CertificateName.
+            var result = new 
+            {
+                certificate.Id,
+                certificate.CertificateCatalogId,
+                certificate.CertifiedDate,
+                certificate.ValidTill,
+                certificate.UserId,
+                CertificateName = certificate.CertificateCatalog != null ? certificate.CertificateCatalog.CertificateName : null
+            };
+            
+            return Ok(result);
         }
         
         // POST: api/certificates/add
