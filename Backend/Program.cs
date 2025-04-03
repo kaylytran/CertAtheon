@@ -9,6 +9,42 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+public static async Task SeedUserAsync(IServiceProvider serviceProvider)
+{
+    var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    string email = "kayly@certatheon.com";
+    string username = "kaylytran";
+    string password = "MySecurePassword123!";
+
+    if (await userManager.FindByEmailAsync(email) == null)
+    {
+        var user = new ApplicationUser
+        {
+            UserName = username,
+            Email = email,
+            EmailConfirmed = true,
+            FirstName = "Kayly",
+            LastName = "Tran",
+            AppRole = "Admin",               // optional
+            JobTitle = "Developer",          // optional
+            ProfilePictureUrl = null         // optional
+        };
+
+        var result = await userManager.CreateAsync(user, password);
+        if (result.Succeeded)
+        {
+            Console.WriteLine("✅ Seeded user successfully.");
+        }
+        else
+        {
+            Console.WriteLine("❌ Failed to seed user:");
+            foreach (var error in result.Errors)
+                Console.WriteLine($" - {error.Description}");
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add controllers.
