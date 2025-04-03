@@ -17,7 +17,7 @@ const Home = () => {
     level: ""
   });
 
-  const url = "http://localhost:5282";
+  const url = "${import.meta.env.VITE_API_BASE_URL}";
   const token = localStorage.getItem("token");
 
   // State to store profile picture URL, with a default placeholder
@@ -235,86 +235,63 @@ const Home = () => {
     );
   };
 
-  const CertificationForm = ({ isEdit }) => (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
-        {isEdit ? (
-          <input
-            type="text"
-            name="certification"
-            value={formData.certification}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            required
-          />
-        ) : (
-          <select
-            name="certification"
-            value={formData.certification}
-            onChange={(e) => {
-              const selectedCertName = e.target.value;
-              const selectedCert = certificateCatalog.find(
-                (cert) => cert.certificateName === selectedCertName
-              );
-              setFormData({
-                ...formData,
-                certification: selectedCertName,
-                level: selectedCert ? selectedCert.certificateLevel : ""
-              });
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            required
-          >
-            <option value="">Select Certificate</option>
-            {certificateCatalog.map((cert, index) => (
-              <option key={index} value={cert.certificateName}>
-                {cert.certificateName}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
-        <input
-          type="date"
-          name="certifiedDate"
-          value={formData.certifiedDate}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Valid Through</label>
-        <input
-          type="date"
-          name="validThrough"
-          value={formData.validThrough}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
-        <select
-          name="level"
-          value={formData.level}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          required
-        >
-          <option value="">Select Level</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Associate">Associate</option>
-          <option value="Professional">Professional</option>
-          <option value="Expert">Expert</option>
-        </select>
-      </div>
-    </div>
-  );
+    const CertificationForm = () => (
+        <div className="space-y-4">
+            <div>
+                <label htmlFor="certification" className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
+                <input
+                    id="certification"
+                    type="text"
+                    name="certification"
+                    value={formData.certification}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                />
+            </div>
+            <div>
+                <label htmlFor="certifiedDate" className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
+                <input
+                    id="certifiedDate"
+                    type="date"
+                    name="certifiedDate"
+                    value={formData.certifiedDate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                />
+            </div>
+            <div>
+                <label htmlFor="validThrough" className="block text-sm font-medium text-gray-700 mb-1">Valid Through</label>
+                <input
+                    id="validThrough"
+                    type="date"
+                    name="validThrough"
+                    value={formData.validThrough}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                />
+            </div>
+            <div>
+                <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
+                <select
+                    id="level"
+                    name="level"
+                    value={formData.level}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                >
+                    <option value="">Select Level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Associate">Associate</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Expert">Expert</option>
+                </select>
+            </div>
+        </div>
+    );
 
   return (
     <div className="min-h-screen w-full bg-gray-100">
@@ -484,3 +461,4 @@ const Home = () => {
 };
 
 export default Home;
+

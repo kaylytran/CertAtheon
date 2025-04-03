@@ -14,13 +14,11 @@ const CertificateCatalog = () => {
         const fetchCatalogData = async () => {
             try {
                 setLoading(true);
-                // Actual API call will be implemented here
-                // const response = await fetch('/api/certificates/catalog');
-                // const data = await response.json();
-                // setCatalogData(data);
+    
+                // Simulate loading delay
+                await new Promise((res) => setTimeout(res, 100));
+    
                 console.log("Will fetch certificate catalog from API");
-
-                // Simulating end of loading state 
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching certificate catalog:", err);
@@ -28,9 +26,10 @@ const CertificateCatalog = () => {
                 setLoading(false);
             }
         };
-
+    
         fetchCatalogData();
     }, []);
+    
 
     // Navigation functions
     const navigateToHome = () => navigate('/home');
