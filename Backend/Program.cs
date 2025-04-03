@@ -2,8 +2,8 @@ using System.Diagnostics;
 using Backend.Data;
 using Backend.Models;
 using Backend.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -65,9 +65,9 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme 
+            new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference 
+                Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
@@ -115,7 +115,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 
     // Automatically launch Vite frontend if present.
-    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");
