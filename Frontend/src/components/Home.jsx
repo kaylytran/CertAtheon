@@ -15,9 +15,11 @@ const Home = () => {
 
     const [formData, setFormData] = useState({
         certification: "",
-        certifiedDate: "",
-        validThrough: "",
-        level: ""
+        category: "DevOps",
+        level: "",
+        description: "Software Dev",
+        certifiedDate: new Date().toISOString().split('T')[0],
+        validThrough: new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0]
     });
 
     const url = 'http://localhost:5282';
@@ -110,36 +112,299 @@ const Home = () => {
         setTimeout(debugUserInfo, 1000);
     }, [navigate]);
 
+    // Process certificate data to handle various API response formats
+    const processCertificateData = (certificates) => {
+        // Make sure we have an array to work with
+        if (!Array.isArray(certificates)) {
+            certificates = [certificates].filter(Boolean);
+        }
+
+        return certificates.map(cert => {
+            // Check if we have a certificate catalog embedded
+            const catalog = cert.certificateCatalog || {};
+
+            // Create a properly structured certificate object
+            return {
+                id: cert.id || 0,
+                // Try to get name from various possible locations
+                name: catalog.certificateName || cert.certificateName || cert.name || 'Unknown Certificate',
+                // Try to get level from various possible locations
+                level: catalog.certificateLevel || cert.certificateLevel || cert.level || '-',
+                certifiedDate: cert.certifiedDate || cert.validFrom || '',
+                expiryDate: cert.expiryDate || cert.validTill || cert.validThrough || '',
+                // Store the catalog ID for edit operations
+                certificateCatalogId: cert.certificationId || catalog.id || 0,
+                // Include any other relevant fields
+                description: catalog.description || cert.description || '',
+                category: catalog.category || cert.category || '',
+                // Include certificate catalog reference
+                certificateCatalog: catalog
+            };
+        });
+    };
+
     // Fetch the current user's certifications
     const fetchMyCertifications = async () => {
         try {
             setLoading(true);
-            const email = localStorage.getItem('email');
-            if (!email) {
-                console.warn("User email not found");
+
+            // Get user information for authentication
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.warn("No authentication token found");
                 setLoading(false);
                 return;
             }
 
-            // Try different possible endpoints
+            // Configure headers with authentication token
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    expand: true  // Request expanded certificate data with catalog info
+                }
+            };
+
+            // Try to get user certificates from the Certificates endpoint
             let response;
             try {
-                response = await axios.get(`${url}/api/User/certifications`);
-            } catch (firstError) {
-                console.log("First attempt failed, trying alternative endpoint");
+                response = await axios.get(`${url}/api/Certificates`, config);
+                console.log("API response:", response);
+            } catch (err) {
+                console.error("Error fetching certificates:", err);
+                // Try alternative endpoint
                 try {
-                    response = await axios.get(`${url}/User/certifications`);
-                } catch (secondError) {
-                    // Last attempt with email parameter
-                    response = await axios.get(`${url}/api/Certification/user?email=${encodeURIComponent(email)}`);
+                    response = await axios.get(`${url}/api/Certificates/1`, config);
+                    // If this is a single certificate, wrap it in an array
+                    if (response.data && !Array.isArray(response.data)) {
+                        response.data = [response.data];
+                    }
+                } catch (secondErr) {
+                    console.error("All certificate fetch attempts failed:", secondErr);
+                    setMyCertifications([]);
+                    setLoading(false);
+                    return;
                 }
             }
 
-            setMyCertifications(response.data || []);
+            // Process the certificate data from API response
+            if (response && response.data) {
+                const processedCertificates = processCertificateData(response.data);
+                console.log("Processed certificates:", processedCertificates);
+                setMyCertifications(processedCertificates);
+            } else {
+                setMyCertifications([]);
+            }
+
             setLoading(false);
         } catch (err) {
-            console.error("Error fetching certifications:", err);
+            console.error("Error in certificate fetching:", err);
+            setMyCertifications([]);
             setLoading(false);
+        }
+    };
+
+    // Handle adding a new certificate
+    const handleAddCertificate = async (e) => {
+        e.preventDefault();
+
+        try {
+            // Get token for authorization
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("You must be logged in to add certificates");
+                return;
+            }
+
+            // Configure authorization header
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            // Format request body according to API requirements
+            const catalogData = {
+                certificateName: formData.certification,
+                category: formData.category || "DevOps",
+                certificateLevel: formData.level,
+                description: formData.description || "Software Dev"
+            };
+
+            console.log("Attempting to add certificate catalog:", catalogData);
+
+            // First try to find an existing catalog entry
+            try {
+                const catalogsResponse = await axios.get(`${url}/api/CertificateCatalog`, config);
+                console.log("Available catalogs:", catalogsResponse.data);
+
+                const existingCatalog = catalogsResponse.data.find(
+                    cat => cat.certificateName === catalogData.certificateName &&
+                        cat.certificateLevel === catalogData.certificateLevel
+                );
+
+                let catalogId;
+                if (existingCatalog) {
+                    console.log("Using existing catalog:", existingCatalog);
+                    catalogId = existingCatalog.id;
+                } else {
+                    // Try to create a new catalog
+                    try {
+                        const newCatalogResponse = await axios.post(
+                            `${url}/api/CertificateCatalog/add`,
+                            catalogData,
+                            config
+                        );
+                        console.log("New catalog created:", newCatalogResponse.data);
+                        catalogId = newCatalogResponse.data.id;
+                    } catch (catalogError) {
+                        console.error("Failed to create catalog:", catalogError);
+                        if (catalogError.response?.status === 400) {
+                            alert("Invalid certificate data. Please check the information and try again.");
+                        } else {
+                            alert("Failed to create certificate catalog: " +
+                                (catalogError.response?.data?.message || catalogError.message || "Unknown error"));
+                        }
+                        return;
+                    }
+                }
+
+                // Now add the user certificate
+                if (catalogId) {
+                    // FIX: Ensure dates are properly formatted for the API
+                    // Create the date objects with a time of 12:00 noon to avoid timezone issues
+                    const certifiedDateObj = new Date(formData.certifiedDate);
+                    certifiedDateObj.setHours(12, 0, 0, 0);
+
+                    const validThroughObj = new Date(formData.validThrough);
+                    validThroughObj.setHours(12, 0, 0, 0);
+
+                    // Format the dates in ISO format
+                    const certifiedDateFormatted = certifiedDateObj.toISOString();
+                    const expiryDateFormatted = validThroughObj.toISOString();
+
+                    // Create the user certificate with the proper data format
+                    const userCertData = {
+                        certificationId: catalogId,
+                        certifiedDate: certifiedDateFormatted,
+                        expiryDate: expiryDateFormatted
+                    };
+
+                    console.log("Adding user certificate with formatted dates:", userCertData);
+
+                    try {
+                        // Add user certificate
+                        const certResponse = await axios.post(
+                            `${url}/api/Certificates/add`,
+                            userCertData,
+                            config
+                        );
+
+                        console.log("Certificate added successfully:", certResponse.data);
+
+                        // Refresh the certificates list
+                        fetchMyCertifications();
+                        alert("Certificate added successfully!");
+                        setShowAddModal(false);
+                    } catch (certError) {
+                        console.error("Failed to add certificate:", certError);
+
+                        if (certError.response?.status === 400) {
+                            alert("Invalid certificate data. The API rejected the request. Please check the dates and try again.");
+                        } else {
+                            alert("Failed to add certificate: " +
+                                (certError.response?.data?.message || certError.message || "Unknown error"));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error getting certificate catalogs:", err);
+                alert("Failed to get certificate catalogs: " + (err.message || "Unknown error"));
+            }
+        } catch (err) {
+            console.error("Error in add certificate process:", err);
+            alert("Failed to add certificate: " + (err.response?.data?.message || err.message || "Unknown error"));
+        }
+    };
+
+    const handleEditCertificate = async (e) => {
+        e.preventDefault();
+
+        if (!currentCert) {
+            alert("No certificate selected for editing");
+            return;
+        }
+
+        try {
+            // Get token for authorization
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("You must be logged in to edit certificates");
+                return;
+            }
+
+            // Configure authorization header
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            // FIX: Ensure dates are properly formatted for the API
+            // Create the date objects with a time of 12:00 noon to avoid timezone issues
+            const certifiedDateObj = new Date(formData.certifiedDate);
+            certifiedDateObj.setHours(12, 0, 0, 0);
+
+            const validThroughObj = new Date(formData.validThrough);
+            validThroughObj.setHours(12, 0, 0, 0);
+
+            // Format the dates in ISO format
+            const certifiedDateFormatted = certifiedDateObj.toISOString();
+            const expiryDateFormatted = validThroughObj.toISOString();
+
+            // Update certificate data with properly formatted dates
+            const updateData = {
+                id: currentCert.id,
+                certificationId: currentCert.certificateCatalogId,
+                certifiedDate: certifiedDateFormatted,
+                expiryDate: expiryDateFormatted
+            };
+
+            console.log("Updating certificate with data:", updateData);
+
+            // Use the API endpoint for updating certificates
+            try {
+                const response = await axios.put(
+                    `${url}/api/Certificates/${currentCert.id}`,
+                    updateData,
+                    config
+                );
+
+                console.log("Certificate updated successfully:", response.data);
+
+                // Refresh the certificates list
+                fetchMyCertifications();
+                alert("Certificate updated successfully!");
+                setShowEditModal(false);
+            } catch (err) {
+                console.error("Error updating certificate:", err);
+
+                if (err.response?.status === 400) {
+                    alert("Invalid certificate data. The API rejected the request. Please check the dates and try again.");
+                } else if (err.response?.status === 403) {
+                    alert("You don't have permission to update certificates. Please contact an administrator.");
+                } else {
+                    alert("Failed to update certificate: " + (err.response?.data?.message || err.message || "Unknown error"));
+                }
+
+                setShowEditModal(false);
+            }
+        } catch (err) {
+            console.error("Error in edit certificate process:", err);
+            alert("Failed to update certificate: " + (err.response?.data?.message || err.message || "Unknown error"));
         }
     };
 
@@ -175,6 +440,18 @@ const Home = () => {
         return false;
     };
 
+    // Add this function to determine if the user can edit certificates
+    const canEditCertificates = () => {
+        // Check user role
+        const storedRole = localStorage.getItem('userRole');
+        const storedAppRole = localStorage.getItem('appRole');
+
+        // Only Managers and Admins can edit certificates
+        return storedRole === 'Manager' || storedRole === 'Admin' ||
+            storedAppRole === 'Manager' || storedAppRole === 'Admin' ||
+            userRole === 'Manager' || userRole === 'Admin';
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -186,9 +463,11 @@ const Home = () => {
     const handleAddNew = () => {
         setFormData({
             certification: "",
-            certifiedDate: "",
-            validThrough: "",
-            level: ""
+            category: "DevOps",
+            level: "",
+            description: "Software Dev",
+            certifiedDate: new Date().toISOString().split('T')[0],
+            validThrough: new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0]
         });
         setShowAddModal(true);
     };
@@ -214,18 +493,47 @@ const Home = () => {
         navigate('/');
     };
 
+    // Improved date formatter that handles invalid dates gracefully
     const formatDate = (dateString) => {
         if (!dateString) return "-";
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
+
+        try {
+            const date = new Date(dateString);
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return "-";
+            }
+            return date.toLocaleDateString();
+        } catch (err) {
+            console.error("Error formatting date:", err);
+            return "-";
+        }
     };
 
-    // Calculate if a certificate is expired or expiring soon (within 30 days)
+    // Improved certificate status calculator
     const getCertificateStatus = (expiryDate) => {
-        if (!expiryDate) return { status: 'Unknown', className: 'bg-gray-100 text-gray-800' };
+        // If no expiry date is provided
+        if (!expiryDate) {
+            return { status: 'Not Set', className: 'bg-gray-100 text-gray-800' };
+        }
 
+        // Try to parse the date, handling various formats
+        let expiry;
+        try {
+            // Handle ISO date format or other string formats
+            expiry = new Date(expiryDate);
+
+            // Check if the date is valid
+            if (isNaN(expiry.getTime())) {
+                return { status: 'Invalid Date', className: 'bg-gray-100 text-gray-800' };
+            }
+        } catch (err) {
+            console.error("Error parsing expiry date:", err);
+            return { status: 'Invalid Date', className: 'bg-gray-100 text-gray-800' };
+        }
+
+        // Calculate days until expiry
         const today = new Date();
-        const expiry = new Date(expiryDate);
         const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
 
         if (daysUntilExpiry < 0) {
@@ -295,7 +603,7 @@ const Home = () => {
     const CertificationForm = () => (
         <div className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Name</label>
                 <input
                     type="text"
                     name="certification"
@@ -303,6 +611,47 @@ const Home = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     required
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                    name="category"
+                    value={formData.category || "DevOps"}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                >
+                    <option value="DevOps">DevOps</option>
+                    <option value="Cloud">Cloud</option>
+                    <option value="Security">Security</option>
+                    <option value="Development">Development</option>
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
+                <select
+                    name="level"
+                    value={formData.level}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                >
+                    <option value="">Select Level</option>
+                    <option value="Fundamental">Fundamental</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Expert">Expert</option>
+                    <option value="Associate">Associate</option>
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                    name="description"
+                    value={formData.description || "Software Dev"}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    rows="2"
                 />
             </div>
             <div>
@@ -326,22 +675,6 @@ const Home = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     required
                 />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
-                <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                >
-                    <option value="">Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Associate">Associate</option>
-                    <option value="Professional">Professional</option>
-                    <option value="Expert">Expert</option>
-                </select>
             </div>
         </div>
     );
@@ -394,12 +727,22 @@ const Home = () => {
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">My Certifications</h2>
-                        <button
-                            onClick={handleAddNew}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        >
-                            Add New Certificate
-                        </button>
+                        {canEditCertificates() ? (
+                            <button
+                                onClick={handleAddNew}
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                                Add New Certificate
+                            </button>
+                        ) : (
+                            <button
+                                disabled
+                                className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+                                title="Contact an administrator to add certificates"
+                            >
+                                Add New Certificate
+                            </button>
+                        )}
                     </div>
 
                     {loading ? (
@@ -451,7 +794,7 @@ const Home = () => {
                                                             {formatDate(cert.certifiedDate)}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {cert.level}
+                                                            {cert.level || '-'}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                             {formatDate(cert.expiryDate)}
@@ -462,21 +805,28 @@ const Home = () => {
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setCurrentCert(cert);
-                                                                    setFormData({
-                                                                        certification: cert.name,
-                                                                        certifiedDate: new Date(cert.certifiedDate).toISOString().split('T')[0],
-                                                                        validThrough: new Date(cert.expiryDate).toISOString().split('T')[0],
-                                                                        level: cert.level
-                                                                    });
-                                                                    setShowEditModal(true);
-                                                                }}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                Edit
-                                                            </button>
+                                                            {/* Only show Edit button if user has permission */}
+                                                            {canEditCertificates() ? (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setCurrentCert(cert);
+                                                                        setFormData({
+                                                                            certification: cert.name,
+                                                                            certifiedDate: cert.certifiedDate ? new Date(cert.certifiedDate).toISOString().split('T')[0] : '',
+                                                                            validThrough: cert.expiryDate ? new Date(cert.expiryDate).toISOString().split('T')[0] : '',
+                                                                            level: cert.level || '',
+                                                                            category: cert.category || 'DevOps',
+                                                                            description: cert.description || 'Software Dev'
+                                                                        });
+                                                                        setShowEditModal(true);
+                                                                    }}
+                                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-gray-400">View Only</span>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 );
@@ -495,13 +845,7 @@ const Home = () => {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 title="Add New Certificate"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    // This function would typically add the certificate to the backend
-                    // For now, we're just showing a demo
-                    alert("This is a static demo. Adding certificates is not functional.");
-                    setShowAddModal(false);
-                }}
+                onSubmit={handleAddCertificate}
             >
                 <CertificationForm />
             </Modal>
@@ -511,13 +855,7 @@ const Home = () => {
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 title="Edit Certificate"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    // This function would typically update the certificate in the backend
-                    // For now, we're just showing a demo
-                    alert("This is a static demo. Editing certificates is not functional.");
-                    setShowEditModal(false);
-                }}
+                onSubmit={handleEditCertificate}
             >
                 <CertificationForm />
             </Modal>
