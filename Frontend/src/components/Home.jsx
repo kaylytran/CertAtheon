@@ -198,8 +198,9 @@ const CertificationDashboard = () => {
     const CertificationForm = () => (
         <div className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
+                <label htmlFor="certification" className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
                 <input
+                    id="certification"
                     type="text"
                     name="certification"
                     value={formData.certification}
@@ -209,8 +210,9 @@ const CertificationDashboard = () => {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
+                <label htmlFor="certifiedDate" className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
                 <input
+                    id="certifiedDate"
                     type="date"
                     name="certifiedDate"
                     value={formData.certifiedDate}
@@ -220,8 +222,9 @@ const CertificationDashboard = () => {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valid Through</label>
+                <label htmlFor="validThrough" className="block text-sm font-medium text-gray-700 mb-1">Valid Through</label>
                 <input
+                    id="validThrough"
                     type="date"
                     name="validThrough"
                     value={formData.validThrough}
@@ -231,8 +234,9 @@ const CertificationDashboard = () => {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
+                <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
                 <select
+                    id="level"
                     name="level"
                     value={formData.level}
                     onChange={handleInputChange}

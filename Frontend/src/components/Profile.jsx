@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
@@ -52,9 +52,10 @@ const Profile = () => {
 
         // Validate passwords match
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            alert("New passwords don't match!");
+            alert("New passwords don't match!"); // This will trigger the alert
             return;
         }
+
 
         try {
             // Will be implemented with actual API
@@ -142,10 +143,11 @@ const Profile = () => {
                     <form onSubmit={handlePasswordSubmit}>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
                                     Current Password
                                 </label>
                                 <input
+                                    id="currentPassword"
                                     type="password"
                                     name="currentPassword"
                                     value={passwordData.currentPassword}
@@ -155,10 +157,11 @@ const Profile = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
                                     New Password
                                 </label>
                                 <input
+                                    id="newPassword"
                                     type="password"
                                     name="newPassword"
                                     value={passwordData.newPassword}
@@ -168,10 +171,11 @@ const Profile = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                                     Confirm New Password
                                 </label>
                                 <input
+                                    id="confirmPassword"
                                     type="password"
                                     name="confirmPassword"
                                     value={passwordData.confirmPassword}
