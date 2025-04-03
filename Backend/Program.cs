@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using Backend.Data;
+<<<<<<< HEAD
 using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Identity;
+=======
+>>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,6 +31,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection")));
 
+<<<<<<< HEAD
 // Register Identity services.
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -102,6 +106,8 @@ builder.Services.AddAuthentication(options =>
 // Register BlobService for Azure Blob Storage.
 builder.Services.AddSingleton<IBlobService, BlobService>();
 
+=======
+>>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
 var app = builder.Build();
 
 // Serve default files and static files, and use the defined CORS policy.
@@ -114,8 +120,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
+<<<<<<< HEAD
     // Automatically launch Vite frontend if present.
     var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
+=======
+    // Automatically launch Vite frontend
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
+>>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");
@@ -140,9 +151,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+<<<<<<< HEAD
 
 // IMPORTANT: Use Authentication before Authorization.
 app.UseAuthentication();
+=======
+>>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
 app.UseAuthorization();
 
 app.MapControllers();

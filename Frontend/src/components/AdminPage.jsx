@@ -5,16 +5,17 @@ import axios from "axios";
 const AdminPage = () => {
     const navigate = useNavigate();
     const url = "http://localhost:5282";
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
 
     // State Variables
-    const [employees, setEmployees] = useState([]); // This will now only store data from /api/Dashboard
+    const [allEmployees, setAllEmployees] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [totalEmployees, setTotalEmployees] = useState(0);
     const [employeesWithCertificate, setEmployeesWithCertificate] = useState(0);
     const [overallAdoptionRate, setOverallAdoptionRate] = useState(0);
-    const [year, setYear] = useState("2025"); // Default year is 2025
+    const [year, setYear] = useState("2025");
     const [showAddModal, setShowAddModal] = useState(false);
     const [newEmployeeData, setNewEmployeeData] = useState({
         firstName: "",
@@ -22,37 +23,120 @@ const AdminPage = () => {
         email: "",
         password: "",
     });
+
+    // Fetch profile picture from localStorage
+    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+
+    // User info from localStorage
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',
         lastName: localStorage.getItem('lastName') || '',
         userRole: localStorage.getItem('userRole') || 'User',
     };
 
-    // Fetch Dashboard Data
+    // Initial setup
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+        // Load profile picture from localStorage if available
+        const storedPic = localStorage.getItem("profilePictureUrl");
+        if (storedPic) {
+            setProfilePic(storedPic);
+        }
 
-                const dashboardData = response.data || {};
-                setTotalEmployees(dashboardData.totalEmployees || 0);
-                setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
-                setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
-                setEmployees(dashboardData.records || []); // Update employees with records from /api/Dashboard
-            } catch (err) {
-                console.error("Failed to load dashboard data:", err);
-                setError("Failed to load dashboard data.");
-                setEmployees([]); // Clear the table if the API call fails
-            } finally {
-                setLoading(false);
-            }
-        };
+        // Initial data fetch
+        fetchAllEmployeeData();
+    }, []);
 
-        fetchDashboardData();
-    }, [year]);
+    // Fetch All Employee Data
+    const fetchAllEmployeeData = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${url}/api/Dashboard`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const dashboardData = response.data || {};
+            // Store the full dataset
+            const records = dashboardData.records || [];
+            setAllEmployees(records);
+            setEmployees(records); // Display all initially
+
+            // Set initial stats
+            setTotalEmployees(dashboardData.totalEmployees || 0);
+            setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
+            setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
+        } catch (err) {
+            console.error("Failed to load dashboard data:", err);
+            setError("Failed to load dashboard data.");
+            setAllEmployees([]);
+            setEmployees([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handler for year input change
+    const handleYearChange = (e) => {
+        setYear(e.target.value);
+    };
+
+    // Direct DOM manipulation approach for year filtering
+    const handleYearSubmit = () => {
+        console.log("Filtering for year:", year);
+
+        if (year.trim() === "") {
+            setEmployees(allEmployees);
+            return;
+        }
+
+        // Direct DOM manipulation approach
+        setTimeout(() => {
+            // Hide all rows first
+            const rows = document.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            let certificateCount = 0;
+
+            rows.forEach(row => {
+                // Get the certificate date and expiry date cells (7th and 8th columns)
+                const certDateCell = row.querySelector('td:nth-child(7)');
+                const expiryDateCell = row.querySelector('td:nth-child(8)');
+                const certificateCell = row.querySelector('td:nth-child(6)');
+
+                // Check if text content contains the year
+                const hasCertDate = certDateCell &&
+                    certDateCell.textContent.includes(year) &&
+                    !certDateCell.textContent.includes("No Certificate");
+
+                const hasExpiryDate = expiryDateCell &&
+                    expiryDateCell.textContent.includes(year) &&
+                    !expiryDateCell.textContent.includes("No Certificate");
+
+                const hasCertificate = certificateCell &&
+                    !certificateCell.textContent.includes("No Certificate");
+
+                // Show or hide the row
+                if (hasCertDate || hasExpiryDate) {
+                    row.style.display = '';
+                    visibleCount++;
+                    if (hasCertificate) certificateCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Update stats in the DOM directly
+            const totalEmpElement = document.querySelector('p:nth-child(1) strong');
+            const withCertElement = document.querySelector('p:nth-child(2) strong');
+            const rateElement = document.querySelector('p:nth-child(3) strong');
+
+            if (totalEmpElement) totalEmpElement.textContent = visibleCount;
+            if (withCertElement) withCertElement.textContent = certificateCount;
+
+            const adoptionRate = visibleCount > 0 ? Math.round((certificateCount / visibleCount) * 100) : 0;
+            if (rateElement) rateElement.textContent = adoptionRate + '%';
+
+            console.log(`Filtered to ${visibleCount} employees with ${certificateCount} certificates`);
+        }, 100);
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -92,37 +176,18 @@ const AdminPage = () => {
 
             alert("Employee added successfully!");
             setShowAddModal(false);
-
-            // Optionally, refresh the dashboard data
-            const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                headers: { Authorization: `Bearer ${token}` },
+            setNewEmployeeData({
+                firstName: "",
+                lastName: "",
+                email: "",
+                password: "",
             });
-            const dashboardData = response.data || {};
-            setEmployees(dashboardData.records || []);
+
+            // Refresh the dashboard data
+            fetchAllEmployeeData();
         } catch (err) {
             console.error("Error adding employee:", err);
             alert("Failed to add employee.");
-        }
-    };
-
-    const handleYearSubmit = async () => {
-        try {
-            setLoading(true);
-            const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            const dashboardData = response.data || {};
-            setTotalEmployees(dashboardData.totalEmployees || 0);
-            setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
-            setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
-            setEmployees(dashboardData.records || []);
-        } catch (err) {
-            console.error("Failed to load dashboard data:", err);
-            setError("Failed to load dashboard data.");
-            setEmployees([]);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -141,12 +206,12 @@ const AdminPage = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
                         <img
-                            src="/api/placeholder/40/40" // Replace with the actual profile photo URL
+                            src={profilePic}
                             alt="User Avatar"
                             className="rounded-full w-10 h-10 cursor-pointer"
-                            onClick={() => navigate("/profile")} // Navigate to the profile page
+                            onClick={() => navigate("/profile")}
                         />
-                        <span>{userInfo?.firstName} {userInfo?.lastName}</span> {/* Dynamically display user name */}
+                        <span>{userInfo?.firstName} {userInfo?.lastName}</span>
                     </div>
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
@@ -179,13 +244,18 @@ const AdminPage = () => {
                     <input
                         type="text"
                         value={year}
-                        onChange={(e) => setYear(e.target.value)}
+                        onChange={handleYearChange}
                         className="px-3 py-2 border border-gray-300 rounded-md"
                         placeholder="Enter Year"
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                                handleYearSubmit();
+                            }
+                        }}
                     />
                     <button
                         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        onClick={handleYearSubmit} // Trigger the API call
+                        onClick={handleYearSubmit}
                     >
                         Submit
                     </button>
@@ -274,52 +344,58 @@ const AdminPage = () => {
 
                 {/* Employee Table */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificate</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Issue Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Expiry Date</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {employees.length > 0 ? (
-                                    employees.map((employee) => (
-                                        <tr key={employee.employeeId}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.fullName}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.email}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.department || "N/A"}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.role}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.certificateLevel || "N/A"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.certificateName || "No Certificate"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.certifiedDate || "No Certificate"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.expiryDate || "No Certificate"}
+                    {loading ? (
+                        <div className="flex justify-center items-center p-8">
+                            <p className="text-gray-500">Loading employee data...</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Issue Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Expiry Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {employees.length > 0 ? (
+                                        employees.map((employee, index) => (
+                                            <tr key={employee.employeeId || index}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.fullName}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.email}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.department || "N/A"}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.role}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {employee.certificateLevel || "N/A"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {employee.certificateName || "No Certificate"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {employee.certifiedDate || "No Certificate"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {employee.expiryDate || "No Certificate"}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                No employees found.
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
-                                            No employees found.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
