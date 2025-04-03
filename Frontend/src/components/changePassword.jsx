@@ -16,7 +16,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "${API_BASE_URL}/api/auth/change-password",
+        `${API_BASE_URL}/api/auth/change-password`,
         {
           currentPassword,
           newPassword,
