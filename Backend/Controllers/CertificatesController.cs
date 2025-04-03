@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Schemas;
+using Backend.Services;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Text.Json;
 
 namespace Backend.Controllers
 {
@@ -18,11 +20,13 @@ namespace Backend.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<CertificatesController> _logger;
+        private readonly IMessageSenderService _messageSender;
 
-        public CertificatesController(ApplicationDbContext context, ILogger<CertificatesController> logger)
+        public CertificatesController(ApplicationDbContext context, ILogger<CertificatesController> logger, IMessageSenderService messageSender)
         {
             _context = context;
             _logger = logger;
+            _messageSender = messageSender;
         }
         
         // GET: api/certificates
@@ -69,7 +73,6 @@ namespace Backend.Controllers
                 return NotFound();
             }
             
-            // Create a result object including the CertificateName.
             var result = new 
             {
                 certificate.Id,
@@ -113,6 +116,27 @@ namespace Backend.Controllers
             _context.Certificates.Add(certificate);
             await _context.SaveChangesAsync();
             _logger.LogInformation("Certificate created for user {UserId} using catalog entry {CatalogId}.", certificate.UserId, request.CertificateCatalogId);
+
+            // Build JSON payload for the Service Bus message.
+            // Retrieve user's email from the claims.
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var payload = new 
+            { 
+                Email = userEmail, 
+                CertificateName = catalogEntry.CertificateName 
+            };
+            var messageContent = JsonSerializer.Serialize(payload);
+            
+            try
+            {
+                await _messageSender.SendMessageAsync(messageContent);
+                _logger.LogInformation("Service Bus message sent: {MessageContent}", messageContent);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send Service Bus message, but certificate stored.");
+            }
+
             return CreatedAtAction(nameof(GetCertificateById), new { id = certificate.Id }, certificate);
         }
         
@@ -159,6 +183,22 @@ namespace Backend.Controllers
             {
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Certificate {Id} updated successfully.", certificate.Id);
+
+                var payload = new 
+                {
+                    Email = User.FindFirstValue(ClaimTypes.Email),
+                    CertificateName = catalogEntry.CertificateName
+                };
+                var messageContent = JsonSerializer.Serialize(payload);
+                try
+                {
+                    await _messageSender.SendMessageAsync(messageContent);
+                    _logger.LogInformation("Service Bus message sent: {MessageContent}", messageContent);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send Service Bus message on update, but certificate stored.");
+                }
             }
             catch (DbUpdateConcurrencyException)
             {
