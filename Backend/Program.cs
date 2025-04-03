@@ -18,7 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("https://csce590-fuhfhtd7a8azh3ag.eastus-01.azurewebsites.net")
+        policy => policy.WithOrigins("${import.meta.env.VITE_API_BASE_URL}")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials());
