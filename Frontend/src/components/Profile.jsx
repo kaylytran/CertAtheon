@@ -1,167 +1,210 @@
-import React, { useEffect, useState, memo } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-// Memoized Password Modal
-const PasswordChangeModal = memo(({ show, passwordData, handleChange, handleSubmit, onClose }) => {
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">Change Password</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={passwordData.currentPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                value={passwordData.newPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={passwordData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <button type="button" onClick={onClose} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancel</button>
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Update Password</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-});
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const navigate = useNavigate();
-  const url = "http://localhost:5282";
-  const token = localStorage.getItem("token");
-
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  });
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get(`${url}/api/Profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setProfileData(response.data);
-
-        // If profilePictureUrl is returned, update localStorage
-        if (response.data?.profilePictureUrl) {
-          localStorage.setItem("profilePictureUrl", response.data.profilePictureUrl);
-        }
-      } catch (err) {
-        console.error("Error fetching profile data:", err);
-        setError("Failed to load profile data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [token]);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
-  const handleProfilePhotoUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      setUploading(true);
-      const response = await axios.post(`${url}/api/Profile/upload-profile-picture`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data"
-        }
-      });
-
-      const imageUrl = response.data.url;
-      const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${url}/${imageUrl.replace(/^\/+/, "")}`;
-
-      // Update both state and localStorage
-      setProfileData((prev) => ({ ...prev, profilePictureUrl: fullUrl }));
-      localStorage.setItem("profilePictureUrl", fullUrl);
-
-      alert("Profile picture updated!");
-    } catch (err) {
-      console.error("Error uploading image:", err);
-      alert("Failed to upload profile picture.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords do not match.");
-      return;
-    }
-
-    try {
-      await axios.post(`${url}/api/Auth/change-password`, passwordData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Password updated successfully.");
-    } catch (err) {
-      console.error("Error updating password:", err);
-      alert("Failed to update password.");
-    } finally {
-      setShowPasswordModal(false);
-      setPasswordData({
+    const navigate = useNavigate();
+    const fileInputRef = useRef(null);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordData, setPasswordData] = useState({
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
-      });
-    }
-  };
+    });
+
+    // User data will be fetched from API
+    const [userData, setUserData] = useState({
+        firstName: "",
+        lastName: "",
+        title: "",
+        email: "",
+        mobile: "",
+        employeeId: "",
+        profileImage: "/api/placeholder/150/150" // Default placeholder until loaded from API
+    });
+
+    // API fetch function for user data
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                // Replace with actual API endpoint
+                // const response = await fetch('/api/user/profile');
+                // const data = await response.json();
+                // setUserData(data);
+                console.log("Will fetch user data from API");
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData({
+            ...passwordData,
+            [name]: value
+        });
+    };
+
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validate passwords match
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            alert("New passwords don't match!"); // This will trigger the alert
+            return;
+        }
+
+
+        try {
+            // Will be implemented with actual API
+            // const response = await fetch('/api/user/password', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json'
+            //     },
+            //     body: JSON.stringify({
+            //         currentPassword: passwordData.currentPassword,
+            //         newPassword: passwordData.newPassword
+            //     })
+            // });
+
+            // if (!response.ok) {
+            //     const errorData = await response.json();
+            //     throw new Error(errorData.message || 'Failed to update password');
+            // }
+
+            console.log("Will update password via API");
+
+            // Close modal and reset form
+            setShowPasswordModal(false);
+            setPasswordData({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: ""
+            });
+
+            // Show success message - in a real app, use a proper notification system
+            alert("Password update request sent. This will be processed when the API is connected.");
+        } catch (error) {
+            console.error("Error updating password:", error);
+            alert("Error updating password: " + error.message);
+        }
+    };
+
+    const handleUploadClick = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Create a temporary preview
+            const imageUrl = URL.createObjectURL(file);
+            setUserData({
+                ...userData,
+                profileImage: imageUrl
+            });
+
+            // File upload logic - will be implemented with actual API
+            const uploadProfileImage = async () => {
+                try {
+                    // Example API upload implementation
+                    // const formData = new FormData();
+                    // formData.append('profileImage', file);
+                    // const response = await fetch('/api/user/profile/image', {
+                    //     method: 'POST',
+                    //     body: formData
+                    // });
+                    // const data = await response.json();
+                    // If needed, update with the returned image URL from server
+                    console.log("Will upload image to API:", file.name);
+                } catch (error) {
+                    console.error("Error uploading image:", error);
+                }
+            };
+
+            uploadProfileImage();
+        }
+    };
+
+    const navigateToHome = () => {
+        navigate('/home');
+    };
+
+    const PasswordChangeModal = () => {
+        if (!showPasswordModal) return null;
+
+        return (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                    <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+                    <form onSubmit={handlePasswordSubmit}>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Current Password
+                                </label>
+                                <input
+                                    id="currentPassword"
+                                    type="password"
+                                    name="currentPassword"
+                                    value={passwordData.currentPassword}
+                                    onChange={handlePasswordChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                    New Password
+                                </label>
+                                <input
+                                    id="newPassword"
+                                    type="password"
+                                    name="newPassword"
+                                    value={passwordData.newPassword}
+                                    onChange={handlePasswordChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirm New Password
+                                </label>
+                                <input
+                                    id="confirmPassword"
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={passwordData.confirmPassword}
+                                    onChange={handlePasswordChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setShowPasswordModal(false)}
+                                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    };
 
   return (
     <div className="min-h-screen w-full bg-gray-100">
