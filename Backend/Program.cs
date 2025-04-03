@@ -109,10 +109,12 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 
+// Enable Swagger for API documentation.
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 
     // Automatically launch Vite frontend if present.
     var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
