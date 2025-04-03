@@ -18,7 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("${import.meta.env.VITE_API_BASE_URL}")
+        policy => policy.WithOrigins("${import.meta.env.URL}")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials());

@@ -4,7 +4,7 @@ import axios from "axios";
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    const url = "${import.meta.env.VITE_API_BASE_URL}";
+    const url = "${import.meta.env.URL}";
     const token = localStorage.getItem("authToken");
 
     // State Variables
