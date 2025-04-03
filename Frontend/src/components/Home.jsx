@@ -17,7 +17,7 @@ const Home = () => {
     level: ""
   });
 
-  const url = "http://localhost:5282";
+  const url = "${import.meta.env.VITE_API_BASE_URL}";
   const token = localStorage.getItem("token");
 
   // State to store profile picture URL, with a default placeholder

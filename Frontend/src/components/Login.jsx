@@ -9,7 +9,7 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
-    const url = 'http://localhost:5282';
+    const url = '${import.meta.env.VITE_API_BASE_URL}';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
