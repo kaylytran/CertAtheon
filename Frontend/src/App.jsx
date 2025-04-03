@@ -5,9 +5,9 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Profile from './components/Profile';
 import CertificateCatalog from './components/CertificateCatalog';
-<<<<<<< HEAD
 import ChangePassword from './components/changePassword';
 import AdminPage from './components/AdminPage';
+import Register from './components/Register';  // Make sure this is imported correctly
 
 // Configure axios to use the token with every request
 axios.interceptors.request.use(
@@ -35,8 +35,6 @@ axios.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-=======
->>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
 
 function App() {
     // Set default axios headers on app mount
@@ -54,12 +52,9 @@ function App() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/catalog" element={<CertificateCatalog />} />
-<<<<<<< HEAD
                 <Route path="/register" element={<Register />} />
                 <Route path="/changepassword" element={<ChangePassword />} />
                 <Route path="/admin" element={<AdminPage />} />
-=======
->>>>>>> 009b9306121086374f9edf64a6c8c57c401b9217
             </Routes>
         </BrowserRouter>
     );
