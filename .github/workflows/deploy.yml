@@ -11,75 +11,45 @@ jobs:
   build:
     runs-on: windows-latest
     outputs:
-      artifact-path: ${{ steps.set-artifact-path.outputs.artifact-path }}
-
+      artifact-path: ${{ steps.publish.outputs.artifact-path }}
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Build Frontend
+      
+      - name: Build
+        run: dotnet build --configuration Release
+      
+      - name: Publish
+        id: publish
         run: |
-          cd Frontend
-          npm ci
-          npm run build
-        shell: pwsh
-
-      - name: Inject Frontend into Backend
-        run: |
-          cd Backend
-
-          # Clean/create wwwroot
-          if (Test-Path "wwwroot") { Remove-Item "wwwroot" -Recurse -Force }
-          New-Item -ItemType Directory -Path "wwwroot" | Out-Null
-
-          # Copy frontend dist contents into wwwroot
-          Copy-Item ../Frontend/dist/* wwwroot -Recurse -Force
-
-          # Confirm copied contents (for debugging)
-          Write-Output "=== Copied to wwwroot ==="
-          Get-ChildItem wwwroot -Recurse
-        shell: pwsh
-
-      - name: Publish Backend with Frontend
-        run: |
-          dotnet publish Backend/Backend.csproj -c Release -o publish
-
-          # Zip for Azure deployment
-          Compress-Archive -Path publish/* -DestinationPath app.zip
-        shell: pwsh
-
-      - name: Set artifact path
-        id: set-artifact-path
-        run: echo "artifact-path=app.zip" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
+          dotnet publish -c Release -o ./publish
+          Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
+          echo "artifact-path=./app.zip" >> $GITHUB_OUTPUT
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: webapp-package
-          path: app.zip
+          path: ./app.zip
 
   deploy:
     runs-on: windows-latest
     needs: build
-
+    
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: webapp-package
           path: ./deploy
-
+      
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'CSCE590'
