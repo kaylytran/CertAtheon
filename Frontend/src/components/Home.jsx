@@ -7,12 +7,9 @@ const Home = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [currentCert, setCurrentCert] = useState(null);
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [userRole, setUserRole] = useState('');
+    const [certificateCatalog, setCertificateCatalog] = useState([]);
     const [myCertifications, setMyCertifications] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const [formData, setFormData] = useState({
         certification: "",
         certifiedDate: "",
@@ -21,246 +18,199 @@ const Home = () => {
     });
 
     const url = 'http://localhost:5282';
+    const token = localStorage.getItem('token');
 
-    // Debug function for user data
-    const debugUserInfo = () => {
-        console.group("User Info Debug");
-        console.log("firstName from state:", firstName);
-        console.log("lastName from state:", lastName);
-        console.log("userRole from state:", userRole);
-        console.log("localStorage firstName:", localStorage.getItem('firstName'));
-        console.log("localStorage lastName:", localStorage.getItem('lastName'));
-        console.log("localStorage userRole:", localStorage.getItem('userRole'));
-        console.log("localStorage appRole:", localStorage.getItem('appRole'));
-        console.log("localStorage email:", localStorage.getItem('email'));
-
-        try {
-            const authStr = localStorage.getItem('authResponse');
-            if (authStr) {
-                const auth = JSON.parse(authStr);
-                console.log("authResponse object:", auth);
-            }
-        } catch (err) {
-            console.error("Error parsing authResponse:", err);
-        }
-        console.groupEnd();
+    // Mock user info from localStorage
+    const userInfo = {
+        firstName: localStorage.getItem('firstName') || 'User',
+        lastName: localStorage.getItem('lastName') || '',
+        userRole: localStorage.getItem('userRole') || 'User',
     };
 
-    // Get user information from localStorage
-    useEffect(() => {
-        // Run debugging on mount
-        debugUserInfo();
-
-        // Check if user is logged in
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        const token = localStorage.getItem('token');
-
-        if (!isLoggedIn || !token) {
-            navigate('/');
-            return;
-        }
-
-        // Load user data - DIRECT assignment, not setState
-        const storedFirstName = localStorage.getItem('firstName');
-        const storedLastName = localStorage.getItem('lastName');
-
-        // Check which role field is available - 'userRole' or 'appRole'
-        let role = localStorage.getItem('userRole');
-        if (!role || role === 'null') {
-            role = localStorage.getItem('appRole');
-        }
-
-        // Try to get values from authResponse as a fallback
-        try {
-            const authResponseStr = localStorage.getItem('authResponse');
-            if (authResponseStr) {
-                const authResponse = JSON.parse(authResponseStr);
-
-                // Set states only if we have real values
-                if (storedFirstName) {
-                    setFirstName(storedFirstName);
-                } else if (authResponse.firstName) {
-                    setFirstName(authResponse.firstName);
-                }
-
-                if (storedLastName) {
-                    setLastName(storedLastName);
-                } else if (authResponse.lastName) {
-                    setLastName(authResponse.lastName);
-                }
-
-                // Get role from authResponse if not found in localStorage
-                if (!role && authResponse.appRole) {
-                    role = authResponse.appRole;
-                }
-            }
-        } catch (err) {
-            console.error("Error parsing authResponse:", err);
-        }
-
-        // Finally set the role state
-        if (role) {
-            setUserRole(role);
-        }
-
-        // Fetch user's certifications
-        fetchMyCertifications();
-
-        // Log debug info again after setting state
-        setTimeout(debugUserInfo, 1000);
-    }, [navigate]);
-
-    // Fetch the current user's certifications
-    const fetchMyCertifications = async () => {
-        try {
-            setLoading(true);
-            const email = localStorage.getItem('email');
-            if (!email) {
-                console.warn("User email not found");
-                setLoading(false);
-                return;
-            }
-
-            // Try different possible endpoints
-            let response;
-            try {
-                response = await axios.get(`${url}/api/User/certifications`);
-            } catch (firstError) {
-                console.log("First attempt failed, trying alternative endpoint");
-                try {
-                    response = await axios.get(`${url}/User/certifications`);
-                } catch (secondError) {
-                    // Last attempt with email parameter
-                    response = await axios.get(`${url}/api/Certification/user?email=${encodeURIComponent(email)}`);
-                }
-            }
-
-            setMyCertifications(response.data || []);
-            setLoading(false);
-        } catch (err) {
-            console.error("Error fetching certifications:", err);
-            setLoading(false);
-        }
+    // Navigate to home
+    const navigateToHome = () => {
+        navigate('/home');
     };
 
-    // Check if user is admin or manager - more robust check
-    const isAdminOrManager = () => {
-        // First check state
-        if (userRole === 'Manager' || userRole === 'Admin') {
-            return true;
-        }
-
-        // Then check localStorage directly (both fields)
-        const storedRole = localStorage.getItem('userRole');
-        const storedAppRole = localStorage.getItem('appRole');
-
-        if (storedRole === 'Manager' || storedRole === 'Admin' ||
-            storedAppRole === 'Manager' || storedAppRole === 'Admin') {
-            return true;
-        }
-
-        // Finally check authResponse
-        try {
-            const authResponseStr = localStorage.getItem('authResponse');
-            if (authResponseStr) {
-                const authResponse = JSON.parse(authResponseStr);
-                if (authResponse.appRole === 'Manager' || authResponse.appRole === 'Admin') {
-                    return true;
-                }
-            }
-        } catch (err) {
-            console.error("Error checking admin status:", err);
-        }
-
-        return false;
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
-    };
-
-    const handleAddNew = () => {
-        setFormData({
-            certification: "",
-            certifiedDate: "",
-            validThrough: "",
-            level: ""
-        });
-        setShowAddModal(true);
-    };
-
+    // Navigate to profile
     const navigateToProfile = () => {
         navigate('/profile');
     };
 
-    const navigateToCatalog = () => {
-        navigate('/catalog');
-    };
-
-    const navigateToAdmin = () => {
-        navigate('/admin');
-    };
-
-    const navigateToEmployees = () => {
-        navigate('/admin');
-    };
-
+    // Handle logout
     const handleLogout = () => {
         localStorage.clear();
         navigate('/');
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "-";
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
-    };
+    // Fetch user's certifications on page load
+    useEffect(() => {
+        const fetchCertificates = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`${url}/api/Certificates`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setMyCertifications(response.data || []);
+            } catch (err) {
+                console.error("Error fetching certifications:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Calculate if a certificate is expired or expiring soon (within 30 days)
-    const getCertificateStatus = (expiryDate) => {
-        if (!expiryDate) return { status: 'Unknown', className: 'bg-gray-100 text-gray-800' };
+        const fetchCertificateCatalog = async () => {
+            try {
+                const response = await axios.get(`${url}/api/CertificateCatalog`);
+                const data = response.data;
+        
+                // Ensure the data is an array and set it to state
+                if (Array.isArray(data)) {
+                    setCertificateCatalog(data);
+                } else {
+                    console.error("Unexpected API response structure:", data);
+                    setCertificateCatalog([]);
+                }
+        
+                console.log("Certificate Catalog:", data);
+            } catch (err) {
+                console.error("Error fetching certificate catalog:", err);
+            }
+        };
 
-        const today = new Date();
-        const expiry = new Date(expiryDate);
-        const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+        fetchCertificates();
+        fetchCertificateCatalog();
+    }, [token]);
 
-        if (daysUntilExpiry < 0) {
-            return { status: 'Expired', className: 'bg-red-100 text-red-800' };
-        } else if (daysUntilExpiry < 30) {
-            return { status: 'Expiring Soon', className: 'bg-yellow-100 text-yellow-800' };
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+
+        // If the certification dropdown is changed, update the level automatically
+        if (name === "certification") {
+            const selectedCert = certificateCatalog.find(
+                (cert) => cert.certificationName === value
+            );
+            setFormData({
+                ...formData,
+                certification: value,
+                level: selectedCert ? selectedCert.level : ""
+            });
         } else {
-            return { status: 'Valid', className: 'bg-green-100 text-green-800' };
+            setFormData({
+                ...formData,
+                [name]: value
+            });
         }
     };
 
-    // Get a user display name with fallbacks
-    const getUserDisplayName = () => {
-        if (firstName && lastName) {
-            return `${firstName} ${lastName}`;
-        } else if (firstName) {
-            return firstName;
-        } else if (lastName) {
-            return lastName;
+    const handleAddNewSubmit = async (e) => {
+        e.preventDefault();
+
+        // Find the selected certificate in the catalog
+        const selectedCert = certificateCatalog.find(
+            (cert) => cert.certificateName === formData.certification
+        );
+
+        if (!selectedCert) {
+            alert("Please select a valid certificate.");
+            return;
         }
 
-        // Check localStorage directly as a fallback
-        const storedFirstName = localStorage.getItem('firstName');
-        const storedLastName = localStorage.getItem('lastName');
+        // Prepare the payload for the POST request
+        const payload = {
+            certificateCatalogId: selectedCert.id,
+            certifiedDate: formData.certifiedDate,
+            validTill: formData.validThrough,
+        };
 
-        if (storedFirstName && storedLastName) {
-            return `${storedFirstName} ${storedLastName}`;
-        } else if (storedFirstName) {
-            return storedFirstName;
-        } else if (storedLastName) {
-            return storedLastName;
+        try {
+            // Send the POST request
+            await axios.post(`${url}/api/Certificates/add`, payload, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            alert("Certificate added successfully!");
+            setShowAddModal(false);
+
+            // Reset the form data
+            setFormData({
+                certification: "",
+                certifiedDate: "",
+                validThrough: "",
+                level: "",
+            });
+
+            // Refresh the certifications list
+            const response = await axios.get(`${url}/api/Certificates`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setMyCertifications(response.data || []);
+        } catch (err) {
+            console.error("Error adding certificate:", err);
+            alert("Failed to add certificate.");
         }
+    };
 
-        // Last fallback - use email or just "User"
-        return localStorage.getItem('email') || 'User';
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+    
+        // Find the selected certificate in the catalog
+        const selectedCert = certificateCatalog.find(
+            (cert) => cert.certificateName === formData.certification
+        );
+    
+        if (!selectedCert) {
+            alert("Please select a valid certificate.");
+            return;
+        }
+    
+        // Prepare the payload for the PUT request
+        const payload = {
+            certificateCatalogId: selectedCert.id, // Use the ID of the selected certificate
+            certifiedDate: formData.certifiedDate,
+            validTill: formData.validThrough,
+        };
+    
+        try {
+            // Send the PUT request
+            await axios.put(`${url}/api/Certificates/${currentCert.id}`, payload, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
+            alert("Certificate updated successfully!");
+            setShowEditModal(false);
+            setCurrentCert(null);
+    
+            // Refresh the certifications list
+            const response = await axios.get(`${url}/api/Certificates`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setMyCertifications(response.data || []);
+        } catch (err) {
+            console.error("Error updating certificate:", err);
+            alert("Failed to update certificate.");
+        }
+    };
+
+    const handleDeleteCert = async (certId) => {
+        if (window.confirm("Are you sure you want to delete this certification?")) {
+            try {
+                await axios.delete(`${url}/api/Certificates/${certId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                alert("Certification deleted successfully!");
+
+                // Refresh the certifications list
+                const response = await axios.get(`${url}/api/Certificates`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setMyCertifications(response.data || []);
+            } catch (err) {
+                console.error("Error deleting certification:", err);
+                alert("Failed to delete certification.");
+            }
+        }
     };
 
     const Modal = ({ isOpen, onClose, title, onSubmit, children }) => {
@@ -292,18 +242,48 @@ const Home = () => {
         );
     };
 
-    const CertificationForm = () => (
+    const CertificationForm = ({ isEdit }) => (
         <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
-                <input
-                    type="text"
-                    name="certification"
-                    value={formData.certification}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                />
+                {isEdit ? (
+                    <input
+                        type="text"
+                        name="certification"
+                        value={formData.certification}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        required
+                    />
+                ) : (
+                    <select
+                        name="certification"
+                        value={formData.certification}
+                        onChange={(e) => {
+                            const selectedCertName = e.target.value;
+
+                            // Find the selected certificate and update the level
+                            const selectedCert = certificateCatalog.find(
+                                (cert) => cert.certificateName === selectedCertName
+                            );
+
+                            setFormData({
+                                ...formData,
+                                certification: selectedCertName,
+                                level: selectedCert ? selectedCert.certificateLevel : "",
+                            });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        required
+                    >
+                        <option value="">Select Certificate</option>
+                        {certificateCatalog.map((cert, index) => (
+                            <option key={index} value={cert.certificateName}>
+                                {cert.certificateName}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
@@ -351,22 +331,18 @@ const Home = () => {
             {/* Header */}
             <header className="bg-blue-600 w-full p-4 flex justify-between items-center">
                 <div className="flex space-x-2">
-                    <button className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800">
-                        Home
-                    </button>
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
-                        onClick={navigateToCatalog}
+                        onClick={navigateToHome}
                     >
-                        Certificate Catalog
+                        Home
                     </button>
-                    {/* Add Employees tab for admin/manager */}
-                    {isAdminOrManager() && (
+                    {userInfo.userRole === "Manager" && (
                         <button
                             className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
-                            onClick={navigateToEmployees}
+                            onClick={() => navigate('/admin')}
                         >
-                            Employees
+                            Admin Dashboard
                         </button>
                     )}
                 </div>
@@ -378,7 +354,7 @@ const Home = () => {
                             className="rounded-full w-10 h-10 cursor-pointer"
                             onClick={navigateToProfile}
                         />
-                        <span>{getUserDisplayName()}</span>
+                        <span>{userInfo.firstName} {userInfo.lastName}</span>
                     </div>
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
@@ -395,7 +371,7 @@ const Home = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">My Certifications</h2>
                         <button
-                            onClick={handleAddNew}
+                            onClick={() => setShowAddModal(true)}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                         >
                             Add New Certificate
@@ -424,64 +400,60 @@ const Home = () => {
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Expiry Date
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Status
-                                            </th>
                                             <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {myCertifications.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
-                                                    No certifications found. Add a new certification to get started.
+                                        {myCertifications.map((cert) => (
+                                            <tr key={cert.id}>
+                                                {/* Certification Name */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {cert.certificateCatalog.certificateName}
+                                                </td>
+
+                                                {/* Certified Date */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {cert.certifiedDate}
+                                                </td>
+
+                                                {/* Certificate Level */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {cert.certificateCatalog.certificateLevel}
+                                                </td>
+
+                                                {/* Expiry Date */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {cert.validTill}
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => {
+                                                            setCurrentCert(cert);
+                                                            setFormData({
+                                                                certification: cert.certificateCatalog.certificateName,
+                                                                certifiedDate: cert.certifiedDate,
+                                                                validThrough: cert.validTill,
+                                                                level: cert.certificateCatalog.certificateLevel,
+                                                            });
+                                                            setShowEditModal(true);
+                                                        }}
+                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteCert(cert.id)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </td>
                                             </tr>
-                                        ) : (
-                                            myCertifications.map((cert) => {
-                                                const status = getCertificateStatus(cert.expiryDate);
-                                                return (
-                                                    <tr key={cert.id}>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                            {cert.name}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {formatDate(cert.certifiedDate)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {cert.level}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {formatDate(cert.expiryDate)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                            <span className={`px-2 py-1 rounded-full text-xs ${status.className}`}>
-                                                                {status.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setCurrentCert(cert);
-                                                                    setFormData({
-                                                                        certification: cert.name,
-                                                                        certifiedDate: new Date(cert.certifiedDate).toISOString().split('T')[0],
-                                                                        validThrough: new Date(cert.expiryDate).toISOString().split('T')[0],
-                                                                        level: cert.level
-                                                                    });
-                                                                    setShowEditModal(true);
-                                                                }}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -495,15 +467,9 @@ const Home = () => {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 title="Add New Certificate"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    // This function would typically add the certificate to the backend
-                    // For now, we're just showing a demo
-                    alert("This is a static demo. Adding certificates is not functional.");
-                    setShowAddModal(false);
-                }}
+                onSubmit={handleAddNewSubmit}
             >
-                <CertificationForm />
+                <CertificationForm isEdit={false} />
             </Modal>
 
             {/* Edit Certificate Modal */}
@@ -511,15 +477,9 @@ const Home = () => {
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 title="Edit Certificate"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    // This function would typically update the certificate in the backend
-                    // For now, we're just showing a demo
-                    alert("This is a static demo. Editing certificates is not functional.");
-                    setShowEditModal(false);
-                }}
+                onSubmit={handleEditSubmit}
             >
-                <CertificationForm />
+                <CertificationForm isEdit={true} />
             </Modal>
         </div>
     );
