@@ -44,8 +44,10 @@ const Login = () => {
             // Store the entire response for reference
             localStorage.setItem('authResponse', JSON.stringify(userData));
 
-            // Check if user needs to change password
-            if (userData.mustChangePassword) {
+            // Check user role and navigate accordingly
+            if (userData.appRole !== 'Employee') {
+                navigate('/admin');
+            } else if (userData.mustChangePassword) {
                 navigate('/changepassword');
             } else {
                 navigate('/home');
