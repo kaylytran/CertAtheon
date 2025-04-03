@@ -45,7 +45,7 @@ namespace Backend.Controllers
                 Email = request.Email, 
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                MustChangePassword = false,
+                MustChangePassword = true,
                 AppRole = "Employee"
             };
             var result = await _userManager.CreateAsync(user, request.Password);
