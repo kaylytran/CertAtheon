@@ -21,6 +21,9 @@ const AdminPage = () => {
         lastName: "",
         email: "",
         password: "",
+        grade: null,
+        phoneNumber: null,
+        jobTitle: null,
     });
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',
