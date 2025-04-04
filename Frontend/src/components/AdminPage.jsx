@@ -197,12 +197,39 @@ const AdminPage = () => {
                 {/* Employee Management */}
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Employee Management</h2>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    >
-                        Add Employee
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        >
+                            Add Employee
+                        </button>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const response = await axios.get(`${url}/api/Dashboard/csv`, {
+                                        headers: { Authorization: `Bearer ${token}` },
+                                        responseType: 'blob', // Ensure the response is treated as a file
+                                    });
+
+                                    // Create a URL for the file and trigger a download
+                                    const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
+                                    const link = document.createElement('a');
+                                    link.href = urlBlob;
+                                    link.setAttribute('download', 'dashboard_data.csv'); // Set the file name
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.remove();
+                                } catch (err) {
+                                    console.error("Error downloading Excel file:", err);
+                                    alert("Failed to download Excel file.");
+                                }
+                            }}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        >
+                            Excel
+                        </button>
+                    </div>
                 </div>
 
                 {/* Add Employee Modal */}
