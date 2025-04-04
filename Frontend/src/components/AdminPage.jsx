@@ -14,6 +14,7 @@ const AdminPage = () => {
     const [totalEmployees, setTotalEmployees] = useState(0);
     const [employeesWithCertificate, setEmployeesWithCertificate] = useState(0);
     const [overallAdoptionRate, setOverallAdoptionRate] = useState(0);
+    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
     const [year, setYear] = useState("2025"); // Default year is 2025
     const [showAddModal, setShowAddModal] = useState(false);
     const [newEmployeeData, setNewEmployeeData] = useState({
@@ -54,8 +55,33 @@ const AdminPage = () => {
             }
         };
 
+        const fetchProfilePicture = async () => {
+            try {
+              const response = await axios.get(`${url}/api/Profile`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const imageUrl = response.data?.profilePictureUrl;
+              if (imageUrl) {
+                const fullUrl = imageUrl.startsWith("http")
+                  ? imageUrl
+                  : `${url}/${imageUrl.replace(/^\/+/, "")}`;
+                setProfilePic(fullUrl);
+                localStorage.setItem("profilePhoto", fullUrl);
+              }
+            } catch (err) {
+              console.error("Error fetching profile picture:", err);
+            }
+          };
+        
+          const cachedPhoto = localStorage.getItem("profilePhoto");
+          if (cachedPhoto) {
+            setProfilePic(cachedPhoto);
+          } else {
+            fetchProfilePicture();
+          }
+
         fetchDashboardData();
-    }, [year]);
+    }, [year, token, url]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -144,7 +170,7 @@ const AdminPage = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
                         <img
-                            src="/api/placeholder/40/40" // Replace with the actual profile photo URL
+                            src={profilePic}
                             alt="User Avatar"
                             className="rounded-full w-10 h-10 cursor-pointer"
                             onClick={() => navigate("/profile")} // Navigate to the profile page
