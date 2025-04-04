@@ -119,11 +119,13 @@ namespace Backend.Controllers
 
             // Build JSON payload for the Service Bus message.
             // Retrieve user's email from the claims.
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
             var payload = new 
             { 
-                Email = userEmail, 
-                CertificateName = catalogEntry.CertificateName 
+                type = "certificate",
+                firstName = User.FindFirstValue("FirstName"),
+                lastName = User.FindFirstValue("LastName"),
+                email = User.FindFirstValue(ClaimTypes.Email),
+                certificate = catalogEntry.CertificateName 
             };
             var messageContent = JsonSerializer.Serialize(payload);
             
@@ -186,8 +188,11 @@ namespace Backend.Controllers
 
                 var payload = new 
                 {
-                    Email = User.FindFirstValue(ClaimTypes.Email),
-                    CertificateName = catalogEntry.CertificateName
+                    type = "update",
+                    firstName = User.FindFirstValue("FirstName"),
+                    lastName = User.FindFirstValue("LastName"),
+                    email = User.FindFirstValue(ClaimTypes.Email),
+                    certificate = catalogEntry.CertificateName 
                 };
                 var messageContent = JsonSerializer.Serialize(payload);
                 try

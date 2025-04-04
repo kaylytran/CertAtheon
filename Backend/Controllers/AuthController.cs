@@ -1,4 +1,5 @@
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.Json;
+
 
 namespace Backend.Controllers
 {
@@ -20,16 +23,19 @@ namespace Backend.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly IMessageSenderService _messageSender;  
         
         public AuthController(UserManager<ApplicationUser> userManager, 
                               SignInManager<ApplicationUser> signInManager,
                               IConfiguration configuration,
-                              ILogger<AuthController> logger)
+                              ILogger<AuthController> logger,
+                              IMessageSenderService messageSender)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _logger = logger;
+            _messageSender = messageSender; 
         }
         
         // POST: api/auth/register
@@ -45,6 +51,8 @@ namespace Backend.Controllers
                 Email = request.Email, 
                 FirstName = request.FirstName,
                 LastName = request.LastName,
+                PhoneNumber = request.PhoneNumber,
+                JobTitle = request.JobTitle,
                 MustChangePassword = true,
                 AppRole = "Employee"
             };
@@ -52,6 +60,32 @@ namespace Backend.Controllers
             if (result.Succeeded)
             {
                 await _signInManager.SignInAsync(user, isPersistent: false);
+
+                // Build JSON payload for Service Bus with new schema.
+                var payload = new 
+                {
+                    type = "registration",
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    email = user.Email,
+                    mobile = user.PhoneNumber,
+                    role = user.JobTitle,
+                    grade = user.JobTitle,
+                    userType = user.AppRole,
+                    tempPassword = request.Password
+                };
+                
+                var messageContent = JsonSerializer.Serialize(payload);
+                try
+                {
+                    await _messageSender.SendMessageAsync(messageContent);
+                    _logger.LogInformation("Registration Service Bus message sent: {MessageContent}", messageContent);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send registration message to Service Bus, but user was registered.");
+                }
+
                 return Ok(new { message = "Registration successful." });
             }
             return BadRequest(result.Errors);
@@ -157,6 +191,10 @@ namespace Backend.Controllers
         public string? LastName  { get; set; }
         public string? Email     { get; set; }
         public string? Password  { get; set; }
+        public string? Grade  { get; set; }
+        public string? PhoneNumber  { get; set; }
+        public string? JobTitle  { get; set; }
+        
     }
     
     public class LoginRequest
