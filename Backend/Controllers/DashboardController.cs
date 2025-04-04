@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Backend.Controllers
@@ -25,6 +26,32 @@ namespace Backend.Controllers
         // GET: api/dashboard?year=2025
         [HttpGet]
         public async Task<IActionResult> GetDashboard([FromQuery] int? year)
+        {
+            var response = await BuildDashboardReport(year);
+            return Ok(response);
+        }
+
+        // GET: api/dashboard/csv?year=2025
+        // Returns the dashboard report as a CSV file.
+        [HttpGet("csv")]
+        public async Task<IActionResult> GetDashboardCsv([FromQuery] int? year)
+        {
+            var report = await BuildDashboardReport(year);
+            // Build CSV content.
+            var csvBuilder = new StringBuilder();
+            // Header row.
+            csvBuilder.AppendLine("EmployeeId,FullName,Role,Grade,Email,CertificateName,CertificateLevel,CertifiedDate,ExpiryDate");
+            // Dashboard records.
+            foreach (var record in report.Records)
+            {
+                csvBuilder.AppendLine($"{record.EmployeeId},{record.FullName},{record.Role},{record.Grade},{record.Email},{record.CertificateName},{record.CertificateLevel},{record.CertifiedDate},{record.ExpiryDate}");
+            }
+            byte[] csvBytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            return File(csvBytes, "text/csv", "DashboardReport.csv");
+        }
+        
+        // Helper method to build the dashboard report.
+        private async Task<dynamic> BuildDashboardReport(int? year)
         {
             int targetYear = year ?? DateTime.UtcNow.Year;
             
@@ -80,15 +107,13 @@ namespace Backend.Controllers
                 ? ((double)employeesWithCertificate / totalEmployees) * 100 
                 : 0;
             
-            var response = new 
+            return new 
             {
                 TotalEmployees = totalEmployees,
                 EmployeesWithCertificate = employeesWithCertificate,
                 OverallAdoptionRate = adoptionRate,
                 Records = dashboardRecords
             };
-            
-            return Ok(response);
         }
     }
 }
