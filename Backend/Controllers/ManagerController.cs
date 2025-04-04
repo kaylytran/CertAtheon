@@ -1,9 +1,11 @@
 using Backend.Models;
 using Backend.Schemas;
+using Backend.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace Backend.Controllers
 {
@@ -15,14 +17,18 @@ namespace Backend.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<ManagerController> _logger;
+        private readonly IMessageSenderService _messageSender;  
+
 
         public ManagerController(UserManager<ApplicationUser> userManager, 
             RoleManager<IdentityRole> roleManager,
-            ILogger<ManagerController> logger)
+            ILogger<ManagerController> logger,
+            IMessageSenderService messageSender)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _messageSender = messageSender; 
         }
 
         // POST: api/manager/register
@@ -47,7 +53,8 @@ namespace Backend.Controllers
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 MustChangePassword = true,
-                AppRole = "Manager"  // Assuming this property is defined in your ApplicationUser if needed.
+                AppRole = "Manager",
+                PhoneNumber = request.PhoneNumber,
             };
 
             var result = await _userManager.CreateAsync(manager, request.Password);
@@ -55,6 +62,31 @@ namespace Backend.Controllers
             {
                 _logger.LogWarning("Manager creation failed: {Errors}", result.Errors);
                 return BadRequest(result.Errors);
+            }
+            else
+            {
+                // Buid JSON payload for Service Bus with new schema.
+                var payload = new 
+                {
+                    type = "registration",
+                    firstName = manager.FirstName,
+                    lastName = manager.LastName,
+                    email = manager.Email,
+                    mobile = manager.PhoneNumber,
+                    userType = manager.AppRole,
+                    tempPassword = request.Password
+                };
+                
+                var messageContent = JsonSerializer.Serialize(payload);
+                try
+                {
+                    await _messageSender.SendMessageAsync(messageContent);
+                    _logger.LogInformation("Registration Service Bus message sent: {MessageContent}", messageContent);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send registration message to Service Bus, but user was registered.");
+                }
             }
 
             // Ensure that the "Manager" role exists.
