@@ -7,10 +7,14 @@ const Register = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [grade, setGrade] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const url = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,12 +24,15 @@ const Register = () => {
     try {
       // Send registration data to the backend
       const response = await axios.post(
-        "http://localhost:5282/api/Auth/register",
+        `${url}/api/Auth/register`,
         {
           firstName,
           lastName,
           email,
           password,
+          grade,
+          phoneNumber,
+          jobTitle,
         },
         {
           headers: {
@@ -46,13 +53,11 @@ const Register = () => {
       // Handle server-side validation errors
       if (error.response && error.response.data) {
         if (Array.isArray(error.response.data)) {
-          // If the server returns an array of validation errors
           const validationErrors = error.response.data
             .map((err) => err.description)
             .join(" ");
           setError(validationErrors);
         } else if (error.response.data.message) {
-          // If the server returns a single error message
           setError(error.response.data.message);
         } else {
           setError("An error occurred. Please try again.");
@@ -113,7 +118,7 @@ const Register = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
-            <div className="mb-6">
+            <div className="mb-4">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password:
               </label>
@@ -134,6 +139,45 @@ const Register = () => {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="grade" className="block text-sm font-medium text-gray-700 mb-1">
+                Grade:
+              </label>
+              <input
+                type="text"
+                id="grade"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number:
+              </label>
+              <input
+                type="text"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                Job Title:
+              </label>
+              <input
+                type="text"
+                id="jobTitle"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
             </div>
             <button
               type="submit"

@@ -4,7 +4,7 @@ import axios from "axios";
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    const url = "${import.meta.env.VITE_API_BASE_URL}";
+    const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem("authToken");
 
     // State Variables
@@ -21,6 +21,9 @@ const AdminPage = () => {
         lastName: "",
         email: "",
         password: "",
+        grade: "default",
+        phoneNumber: "1234567890",
+        jobTitle: "Developer",
     });
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',

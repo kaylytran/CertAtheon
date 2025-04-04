@@ -9,7 +9,7 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
-    const url = '${import.meta.env.VITE_API_BASE_URL}';
+    const url = import.meta.env.VITE_API_BASE_URL;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -104,14 +104,6 @@ const Login = () => {
                             {isLoading ? 'Logging in...' : 'Login'}
                         </button>
                     </form>
-                    <div className="text-center mt-4">
-                        <p className="text-sm text-gray-600">
-                            Don't have an account?{' '}
-                            <Link to="/register" className="text-blue-500 hover:underline">
-                                Sign Up
-                            </Link>
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
