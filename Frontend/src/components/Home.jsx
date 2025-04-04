@@ -156,7 +156,7 @@ const Home = () => {
     
         // Find the selected certificate in the catalog
         const selectedCert = certificateCatalog.find(
-            (cert) => cert.certificateName === formData.certification
+            (cert) => cert.certId === formData.certification
         );
     
         if (!selectedCert) {
@@ -416,7 +416,7 @@ const Home = () => {
                                             <tr key={cert.id}>
                                                 {/* Certification Name */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {cert.certificateCatalog?.certificateName || "N/A"}
+                                                    {cert.certificateName || "N/A"}
                                                 </td>
 
                                                 {/* Certified Date */}
@@ -426,7 +426,7 @@ const Home = () => {
 
                                                 {/* Certificate Level */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {cert.certificateCatalog?.certificateLevel || "N/A"}
+                                                    {cert.certificateLevel || "N/A"}
                                                 </td>
 
                                                 {/* Expiry Date */}
