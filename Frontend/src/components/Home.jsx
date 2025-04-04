@@ -9,6 +9,7 @@ const Home = () => {
     const [currentCert, setCurrentCert] = useState(null);
     const [certificateCatalog, setCertificateCatalog] = useState([]);
     const [myCertifications, setMyCertifications] = useState([]);
+    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         certification: "",
@@ -77,6 +78,31 @@ const Home = () => {
                 console.error("Error fetching certificate catalog:", err);
             }
         };
+
+        const fetchProfilePicture = async () => {
+            try {
+                const response = await axios.get(`${url}/api/Profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const imageUrl = response.data?.profilePictureUrl;
+                if (imageUrl) {
+                    const fullUrl = imageUrl.startsWith("http")
+                        ? imageUrl
+                        : `${url}/${imageUrl.replace(/^\/+/, "")}`;
+                    setProfilePic(fullUrl);
+                    localStorage.setItem("profilePictureUrl", fullUrl);
+                }
+            } catch (err) {
+                console.error("Error fetching profile picture:", err);
+            }
+        };
+
+        const cachedPic = localStorage.getItem("profilePictureUrl");
+    if (cachedPic) {
+        setProfilePic(cachedPic);
+    } else {
+        fetchProfilePicture();
+    }
 
         fetchCertificates();
         fetchCertificateCatalog();
@@ -340,12 +366,12 @@ const Home = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
-                        <img
-                            src="/api/placeholder/40/40"
-                            alt="User Avatar"
-                            className="rounded-full w-10 h-10 cursor-pointer"
-                            onClick={navigateToProfile}
-                        />
+                    <img
+                        src={profilePic}
+                        alt="User Avatar"
+                        className="rounded-full w-10 h-10 cursor-pointer"
+                        onClick={navigateToProfile}
+                    />
                         <span>{userInfo.firstName} {userInfo.lastName}</span>
                     </div>
                     <button

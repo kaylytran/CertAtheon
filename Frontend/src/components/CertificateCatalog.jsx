@@ -6,12 +6,13 @@ const CertificateCatalog = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem("authToken");
 
-    const url = import.meta.env.VITE_API_BASE_URL; // Update this to your backend URL
+    const url = import.meta.env.VITE_API_BASE_URL;
 
     // State for catalog data
     const [catalogData, setCatalogData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
 
     // State for modal
     const [showModal, setShowModal] = useState(false);
@@ -25,22 +26,48 @@ const CertificateCatalog = () => {
     // Fetch certificate catalog data from API
     useEffect(() => {
         const fetchCatalogData = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get(`${url}/api/CertificateCatalog`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setCatalogData(response.data);
-            } catch (err) {
-                console.error("Error fetching certificate catalog:", err);
-                setError("Failed to load certificate catalog");
-            } finally {
-                setLoading(false);
-            }
+          try {
+            setLoading(true);
+            const response = await axios.get(`${url}/api/CertificateCatalog`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setCatalogData(response.data);
+          } catch (err) {
+            console.error("Error fetching certificate catalog:", err);
+            setError("Failed to load certificate catalog");
+          } finally {
+            setLoading(false);
+          }
         };
-
+      
+        const fetchProfilePicture = async () => {
+          try {
+            const response = await axios.get(`${url}/api/Profile`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const imageUrl = response.data?.profilePictureUrl;
+            if (imageUrl) {
+              const fullUrl = imageUrl.startsWith("http")
+                ? imageUrl
+                : `${url}/${imageUrl.replace(/^\/+/, "")}`;
+              setProfilePic(fullUrl); //this assumes you've defined profilePic state
+              localStorage.setItem("profilePhoto", fullUrl); //store in localStorage
+            }
+          } catch (err) {
+            console.error("Error fetching profile picture:", err);
+          }
+        };
+      
+        const storedPhoto = localStorage.getItem("profilePhoto");
+        if (storedPhoto) {
+          setProfilePic(storedPhoto);
+        } else {
+          fetchProfilePicture();
+        }
+      
         fetchCatalogData();
-    }, [token]);
+      }, [token]);
+      
 
     // Handle input changes in the modal
     const handleInputChange = (e) => {
@@ -120,7 +147,7 @@ const CertificateCatalog = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
                         <img
-                            src={userInfo.profilePhoto}
+                            src={profilePic}
                             alt="User Avatar"
                             className="rounded-full w-10 h-10 object-cover cursor-pointer"
                             onClick={navigateToProfile}
