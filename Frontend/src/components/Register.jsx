@@ -10,7 +10,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false); 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
+  const url = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +21,7 @@ const Register = () => {
     try {
       // Send registration data to the backend
       const response = await axios.post(
-        "http://localhost:5282/api/Auth/register",
+        `${url}/api/Auth/register`,
         {
           firstName,
           lastName,
