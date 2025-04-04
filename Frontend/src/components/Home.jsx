@@ -154,15 +154,9 @@ const Home = () => {
     const handleEditSubmit = async (e) => {
         e.preventDefault();
 
-        // Ensure a certificate is selected
-        if (!formData.certificateCatalogId) {
-            alert("Please select a valid certificate.");
-            return;
-        }
-
         // Prepare the payload for the PUT request
         const payload = {
-            certificateCatalogId: formData.certificateCatalogId, // Use the selected certificate ID
+            certificateCatalogId: currentCert.certificateCatalogId, // Use the existing certificate ID
             certifiedDate: formData.certifiedDate,
             validTill: formData.validThrough,
         };
@@ -242,34 +236,46 @@ const Home = () => {
         <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
-                <select
-                    name="certification"
-                    value={formData.certification}
-                    onChange={(e) => {
-                        const selectedCertName = e.target.value;
+                {isEdit ? (
+                    // Make the certificate name read-only for editing
+                    <input
+                        type="text"
+                        name="certification"
+                        value={formData.certification}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                    />
+                ) : (
+                    // Allow selecting a certificate when adding a new one
+                    <select
+                        name="certification"
+                        value={formData.certification}
+                        onChange={(e) => {
+                            const selectedCertName = e.target.value;
 
-                        // Find the selected certificate and update the level
-                        const selectedCert = certificateCatalog.find(
-                            (cert) => cert.certificateName === selectedCertName
-                        );
+                            // Find the selected certificate and update the level
+                            const selectedCert = certificateCatalog.find(
+                                (cert) => cert.certificateName === selectedCertName
+                            );
 
-                        setFormData({
-                            ...formData,
-                            certification: selectedCertName,
-                            level: selectedCert ? selectedCert.certificateLevel : "",
-                            certificateCatalogId: selectedCert ? selectedCert.id : null, // Store the certificate ID
-                        });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                >
-                    <option value="">Select Certificate</option>
-                    {certificateCatalog.map((cert, index) => (
-                        <option key={index} value={cert.certificateName}>
-                            {cert.certificateName}
-                        </option>
-                    ))}
-                </select>
+                            setFormData({
+                                ...formData,
+                                certification: selectedCertName,
+                                level: selectedCert ? selectedCert.certificateLevel : "",
+                                certificateCatalogId: selectedCert ? selectedCert.id : null, // Store the certificate ID
+                            });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        required
+                    >
+                        <option value="">Select Certificate</option>
+                        {certificateCatalog.map((cert, index) => (
+                            <option key={index} value={cert.certificateName}>
+                                {cert.certificateName}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
