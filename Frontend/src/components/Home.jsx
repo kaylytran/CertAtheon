@@ -153,34 +153,30 @@ const Home = () => {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
-    
-        // Find the selected certificate in the catalog
-        const selectedCert = certificateCatalog.find(
-            (cert) => cert.certId === formData.certification
-        );
-    
-        if (!selectedCert) {
+
+        // Ensure a certificate is selected
+        if (!formData.certificateCatalogId) {
             alert("Please select a valid certificate.");
             return;
         }
-    
+
         // Prepare the payload for the PUT request
         const payload = {
-            certificateCatalogId: selectedCert.id, // Use the ID of the selected certificate
+            certificateCatalogId: formData.certificateCatalogId, // Use the selected certificate ID
             certifiedDate: formData.certifiedDate,
             validTill: formData.validThrough,
         };
-    
+
         try {
             // Send the PUT request
             await axios.put(`${url}/api/Certificates/${currentCert.id}`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-    
+
             alert("Certificate updated successfully!");
             setShowEditModal(false);
             setCurrentCert(null);
-    
+
             // Refresh the certifications list
             const response = await axios.get(`${url}/api/Certificates`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -246,44 +242,34 @@ const Home = () => {
         <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
-                {isEdit ? (
-                    <input
-                        type="text"
-                        name="certification"
-                        value={formData.certification}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        required
-                    />
-                ) : (
-                    <select
-                        name="certification"
-                        value={formData.certification}
-                        onChange={(e) => {
-                            const selectedCertName = e.target.value;
+                <select
+                    name="certification"
+                    value={formData.certification}
+                    onChange={(e) => {
+                        const selectedCertName = e.target.value;
 
-                            // Find the selected certificate and update the level
-                            const selectedCert = certificateCatalog.find(
-                                (cert) => cert.certificateName === selectedCertName
-                            );
+                        // Find the selected certificate and update the level
+                        const selectedCert = certificateCatalog.find(
+                            (cert) => cert.certificateName === selectedCertName
+                        );
 
-                            setFormData({
-                                ...formData,
-                                certification: selectedCertName,
-                                level: selectedCert ? selectedCert.certificateLevel : "",
-                            });
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        required
-                    >
-                        <option value="">Select Certificate</option>
-                        {certificateCatalog.map((cert, index) => (
-                            <option key={index} value={cert.certificateName}>
-                                {cert.certificateName}
-                            </option>
-                        ))}
-                    </select>
-                )}
+                        setFormData({
+                            ...formData,
+                            certification: selectedCertName,
+                            level: selectedCert ? selectedCert.certificateLevel : "",
+                            certificateCatalogId: selectedCert ? selectedCert.id : null, // Store the certificate ID
+                        });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                >
+                    <option value="">Select Certificate</option>
+                    {certificateCatalog.map((cert, index) => (
+                        <option key={index} value={cert.certificateName}>
+                            {cert.certificateName}
+                        </option>
+                    ))}
+                </select>
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certified Date</label>
@@ -309,19 +295,13 @@ const Home = () => {
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
-                <select
+                <input
+                    type="text"
                     name="level"
                     value={formData.level}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                >
-                    <option value="">Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Associate">Associate</option>
-                    <option value="Professional">Professional</option>
-                    <option value="Expert">Expert</option>
-                </select>
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                />
             </div>
         </div>
     );
