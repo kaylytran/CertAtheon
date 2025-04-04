@@ -426,7 +426,10 @@ const Home = () => {
 
                                                 {/* Certificate Level */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {cert.certificateLevel || "N/A"}
+                                                    {
+                                                        certificateCatalog.find((catalogCert) => catalogCert.certificateName === cert.certificateName)
+                                                            ?.certificateLevel || "N/A"
+                                                    }
                                                 </td>
 
                                                 {/* Expiry Date */}
@@ -438,18 +441,15 @@ const Home = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() => {
-                                                            if (cert.certificateCatalog) {
-                                                                setCurrentCert(cert);
-                                                                setFormData({
-                                                                    certification: cert.certificateCatalog.certificateName,
-                                                                    certifiedDate: cert.certifiedDate,
-                                                                    validThrough: cert.validTill,
-                                                                    level: cert.certificateCatalog.certificateLevel,
-                                                                });
-                                                                setShowEditModal(true);
-                                                            } else {
-                                                                alert("This certification cannot be edited.");
-                                                            }
+                                                            // Set the current certificate and populate the form data for editing
+                                                            setCurrentCert(cert);
+                                                            setFormData({
+                                                                certification: cert.certificateName, // Use certificateName directly
+                                                                certifiedDate: cert.certifiedDate,
+                                                                validThrough: cert.validTill,
+                                                                level: cert.certificateLevel,
+                                                            });
+                                                            setShowEditModal(true); // Open the edit modal
                                                         }}
                                                         className="text-indigo-600 hover:text-indigo-900 mr-4"
                                                     >
