@@ -1,15 +1,15 @@
-# CertAethon 🧾
+# CertAethon
 
 **CertAethon** is a web-based certification tracking platform built for organizations to manage employee certifications with ease. The system supports individual profile views, a searchable certificate catalog, admin dashboards, and real-time updates from employee data feeds.
 
-## 📌 Project Overview
+## Project Overview
 
 CertAethon allows:
 - **Employees** to view and manage their certifications.
 - **Admins** to oversee their own and team members' certification progress.
 - **Organizations** to maintain up-to-date certification catalogs and profiles using batch data feeds.
 
-## 🔧 Tech Stack
+## Tech Stack
 
 **Frontend:**
 - React (Vite)
@@ -27,32 +27,32 @@ CertAethon allows:
 - Azure Data Studio / SQL Server Management Studio
 - Azure App Services / GitHub Actions (CI/CD)
 
-## 🚀 Features
+## Features
 
-### 🌐 General
+### General
 - Role-based access: Employee and Admin
 - Authentication via secure login
 
-### 👤 Profile Management
+### Profile Management
 - View/update personal info (name, role, email, mobile)
 - Upload profile pictures
 - Change passwords securely
 
-### 🎓 Certification Dashboard
+### Certification Dashboard
 - Add, edit, and delete certifications
 - Browse certification catalog
 - Search and filter certifications
 
-### 🧑‍💼 Admin Page
+### Admin Page
 - View summary statistics
 - Manage employee profiles and certification progress
 - Add employees via modal
 
-### ⚙️ System Integration
+### System Integration
 - Real-time syncing with external employee feeds
 - Default password generation and email notifications for new users
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 - [.NET 7+](https://dotnet.microsoft.com/)
