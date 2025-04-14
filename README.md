@@ -6,23 +6,7 @@ CertAethon is a cloud-native certification management platform developed for CSC
 
 ---
 
-## 📘 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-  - [Core Use Cases](#core-use-cases)
-  - [Epic 5: Real-Time Data Loading](#epic-5-real-time-data-loading)
-  - [Epic 6: Smart Certificate Validation](#epic-6-smart-certificate-validation)
-  - [Optional Features](#optional-features)
-- [Tech Stack](#tech-stack)
-- [Azure Services Used](#azure-services-used)
-- [Setup Instructions](#setup-instructions)
-- [Team & Time Estimates](#team--time-estimates)
-- [Team Members](#team-members)
-
----
-
-## 📌 Overview
+## Overview
 
 CertAethon is a full-stack web application designed to:
 - Provide employees with a secure dashboard to manage their certifications.
@@ -32,9 +16,9 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## 🚀 Features
+## Features
 
-### ✅ Core Use Cases
+### Core Use Cases
 
 1. **Home Screen**
    - View all uploaded certifications
@@ -57,7 +41,7 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## ⚡ Epic 5: Real-Time Data Loading
+## Epic 5: Real-Time Data Loading
 
 **Feature 5.1: Employee and Certificate Feed Integration**
 - Automatically loads employee and certificate data from external feeds into the database.
@@ -73,7 +57,7 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## 🧠 Epic 6: Smart Certificate Validation
+## Epic 6: Smart Certificate Validation
 
 **Feature 6.1: OCR-Powered Certificate Parsing**
 - Users upload certificate PDFs directly from the Home Screen.
@@ -96,20 +80,20 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## 🧩 Optional Features
+## Optional Features
 
-### 🔐 Optional Use Case 1: Login and Authentication
+### Optional Use Case 1: Login and Authentication
 - Secure login page
 - Password change functionality
 - Forced password change on first login
 
-### 🖼 Optional Use Case 2: Profile Picture Upload
+### Optional Use Case 2: Profile Picture Upload
 - Upload profile pictures to Azure Blob Storage
 - Integrated into the user profile
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 ### Development Tools
 - Visual Studio (C#/.NET 8)
@@ -142,7 +126,7 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## 🛠 Setup Instructions
+## Setup Instructions
 
 ### Prerequisites
 - [.NET 8 SDK](https://dotnet.microsoft.com/)
@@ -155,3 +139,30 @@ cd Backend
 dotnet restore
 dotnet ef database update
 dotnet run
+```
+
+### Frontend Setup
+```
+cd Frontend
+npm install
+npm run dev
+```
+Access API via Swagger: https://localhost:<port>/swagger
+Access frontend: http://localhost:5173
+
+After having everything downloaded and your connection string to your database, running
+```
+dotnet run
+```
+in the Backend folder, this will launch the frontend and backend.
+
+---
+
+## Team Members
+
+Team Name: Stackoverflow-ers
+- Dillon McLaughlin - Scrum Analyst
+- Kayly Tran - Test Analyst
+- Basith Penna-Hakkim - Technical Design Analyst
+- Marcus Campbell - Developer Analyst
+- Kasra Korminejad - Developer Analyst
