@@ -1,69 +1,157 @@
-# CertAethon
+# CertAethon – Certification Tracker Platform
 
-**CertAethon** is a web-based certification tracking platform built for organizations to manage employee certifications with ease. The system supports individual profile views, a searchable certificate catalog, admin dashboards, and real-time updates from employee data feeds.
+CertAethon is a cloud-native certification management platform developed for CSCE 590 – Azure Cloud Native Development. It enables employees and administrators to manage, validate, and track certifications in real time, leveraging a modern Azure-based microservices architecture.
 
-## Project Overview
+> Developed by Team stackoverflow-ers | Instructor: Venkata Achanti
 
-CertAethon allows:
-- **Employees** to view and manage their certifications.
-- **Admins** to oversee their own and team members' certification progress.
-- **Organizations** to maintain up-to-date certification catalogs and profiles using batch data feeds.
+---
 
-## Tech Stack
+## 📘 Table of Contents
 
-**Frontend:**
+- [Overview](#overview)
+- [Features](#features)
+  - [Core Use Cases](#core-use-cases)
+  - [Epic 5: Real-Time Data Loading](#epic-5-real-time-data-loading)
+  - [Epic 6: Smart Certificate Validation](#epic-6-smart-certificate-validation)
+  - [Optional Features](#optional-features)
+- [Tech Stack](#tech-stack)
+- [Azure Services Used](#azure-services-used)
+- [Setup Instructions](#setup-instructions)
+- [Team & Time Estimates](#team--time-estimates)
+- [Team Members](#team-members)
+
+---
+
+## 📌 Overview
+
+CertAethon is a full-stack web application designed to:
+- Provide employees with a secure dashboard to manage their certifications.
+- Allow administrators to maintain employee records and oversee team certifications.
+- Automatically load and validate certifications from uploaded PDFs using AI.
+- Integrate with external feeds for real-time updates using Azure Functions and Service Bus.
+
+---
+
+## 🚀 Features
+
+### ✅ Core Use Cases
+
+1. **Home Screen**
+   - View all uploaded certifications
+   - Quick access to key actions: upload, validate, manage
+
+2. **Certificate Management**
+   - Add, edit, or delete certifications
+   - Real-time status updates
+
+3. **Notification System**
+   - System alerts for expiring or newly added certifications
+
+4. **Dashboard**
+   - Admin view of team certification progress
+   - Summary stats
+
+5. **Profile & Certificate Catalog**
+   - View and update user details
+   - Browse searchable certificate catalog
+
+---
+
+## ⚡ Epic 5: Real-Time Data Loading
+
+**Feature 5.1: Employee and Certificate Feed Integration**
+- Automatically loads employee and certificate data from external feeds into the database.
+- Ensures data is always current by triggering updates in real time.
+
+**User Stories:**
+- As an admin, I want the system to process feeds automatically so that the database is always current.
+- As an admin, I want to avoid manual updates and let the system manage data ingestion.
+
+**Acceptance Criteria:**
+- Feeds are processed automatically and in real time.
+- Data is accurately persisted into Azure SQL Database.
+
+---
+
+## 🧠 Epic 6: Smart Certificate Validation
+
+**Feature 6.1: OCR-Powered Certificate Parsing**
+- Users upload certificate PDFs directly from the Home Screen.
+- Azure Cognitive Services (OCR) extract:
+  - Certificate Name
+  - Issue Date
+  - Expiry Date
+
+**User Stories:**
+1. Upload PDF to system
+2. Auto-extract certificate info via OCR
+3. Review/edit extracted info
+4. Save certificate to the system
+5. View/manage uploaded certificates
+
+**Benefits:**
+- Reduces manual data entry
+- Improves accuracy using AI
+- Enhances user experience
+
+---
+
+## 🧩 Optional Features
+
+### 🔐 Optional Use Case 1: Login and Authentication
+- Secure login page
+- Password change functionality
+- Forced password change on first login
+
+### 🖼 Optional Use Case 2: Profile Picture Upload
+- Upload profile pictures to Azure Blob Storage
+- Integrated into the user profile
+
+---
+
+## 🧰 Tech Stack
+
+### Development Tools
+- Visual Studio (C#/.NET 8)
+- Azure Data Studio
+
+### Frontend
 - React (Vite)
 - Tailwind CSS
-- Jest & React Testing Library
+- HTML, JavaScript
 
-**Backend:**
-- C# (.NET Core Web API)
+### Backend
+- .NET Core 8 Web API
+- RESTful services
 - Entity Framework Core
-- SQL Server
 
-**Tools & Platforms:**
-- Swagger (API Docs)
-- Postman (Testing)
-- Azure Data Studio / SQL Server Management Studio
-- Azure App Services / GitHub Actions (CI/CD)
+---
 
-## Features
+## ☁️ Azure Services Used
 
-### General
-- Role-based access: Employee and Admin
-- Authentication via secure login
+| Service                  | Purpose                                  |
+|--------------------------|-------------------------------------------|
+| Azure SQL Database       | Store user, certification, and feed data |
+| Azure Cosmos DB          | Scalable NoSQL data for feed ingestion   |
+| Azure Blob Storage       | Store PDFs and profile images            |
+| Azure Cognitive Services | OCR for certificate validation           |
+| Azure Function App       | Trigger on feed and file upload events   |
+| Azure Service Bus        | Async messaging for real-time updates    |
+| Azure Logic App          | Low-code process automation              |
+| Azure Data Factory       | Feed integration pipelines               |
 
-### Profile Management
-- View/update personal info (name, role, email, mobile)
-- Upload profile pictures
-- Change passwords securely
+---
 
-### Certification Dashboard
-- Add, edit, and delete certifications
-- Browse certification catalog
-- Search and filter certifications
-
-### Admin Page
-- View summary statistics
-- Manage employee profiles and certification progress
-- Add employees via modal
-
-### System Integration
-- Real-time syncing with external employee feeds
-- Default password generation and email notifications for new users
-
-## Getting Started
+## 🛠 Setup Instructions
 
 ### Prerequisites
-- [.NET 7+](https://dotnet.microsoft.com/)
+- [.NET 8 SDK](https://dotnet.microsoft.com/)
 - [Node.js 18+](https://nodejs.org/)
-- SQL Server
-- (Optional) Azure CLI & GitHub Actions
+- Azure Account with appropriate service access
 
 ### Backend Setup
-
 ```bash
 cd Backend
 dotnet restore
 dotnet ef database update
-dotnet run```
+dotnet run
