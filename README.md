@@ -2,7 +2,7 @@
 
 CertAethon is a cloud-native certification management platform developed for CSCE 590 – Azure Cloud Native Development. It enables employees and administrators to manage, validate, and track certifications in real time, leveraging a modern Azure-based microservices architecture.
 
-> Developed by Team stackoverflow-ers | Instructor: Venkata Achanti
+> Developed by Team CertAefied Copilots | Instructor: Venkata Achanti
 
 ---
 
@@ -111,7 +111,7 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## ☁️ Azure Services Used
+## Azure Services Used
 
 | Service                  | Purpose                                  |
 |--------------------------|-------------------------------------------|
@@ -160,7 +160,7 @@ in the Backend folder, this will launch the frontend and backend.
 
 ## Team Members
 
-Team Name: Stackoverflow-ers
+Team Name: CertAefied Copilots
 - Dillon McLaughlin - Scrum Analyst
 - Kayly Tran - Test Analyst
 - Basith Penna-Hakkim - Technical Design Analyst
