@@ -1,6 +1,10 @@
 name: Cleanup Old Artifacts
 
 on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
   schedule:
     - cron: '0 0 * * *' # every day at midnight UTC
   workflow_dispatch: # allow manual runs too
