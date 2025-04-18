@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -8,7 +8,9 @@ const AdminPage = () => {
     const token = localStorage.getItem("authToken");
 
     // State Variables
-    const [employees, setEmployees] = useState([]); // This will now only store data from /api/Dashboard
+    const [employees, setEmployees] = useState([]); // Original employee data
+    const [filteredEmployees, setFilteredEmployees] = useState([]); // Filtered employee data
+    const [searchQuery, setSearchQuery] = useState(""); // Search query
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [totalEmployees, setTotalEmployees] = useState(0);
@@ -16,6 +18,15 @@ const AdminPage = () => {
     const [overallAdoptionRate, setOverallAdoptionRate] = useState(0);
     const [year, setYear] = useState("2025"); // Default year is 2025
     const [showAddModal, setShowAddModal] = useState(false);
+    
+    // Track if component is mounted to prevent state updates after unmount
+    const isMounted = useRef(true);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [totalPages, setTotalPages] = useState(1);
+    
     const [newEmployeeData, setNewEmployeeData] = useState({
         firstName: "",
         lastName: "",
@@ -31,6 +42,13 @@ const AdminPage = () => {
         userRole: localStorage.getItem('userRole') || 'User',
     };
 
+    // Set isMounted to false when component unmounts
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
     // Fetch Dashboard Data
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -40,23 +58,143 @@ const AdminPage = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                const dashboardData = response.data || {};
-                setTotalEmployees(dashboardData.totalEmployees || 0);
-                setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
-                setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
-                setEmployees(dashboardData.records || []); // Update employees with records from /api/Dashboard
+                // Only update state if component is still mounted
+                if (isMounted.current) {
+                    const dashboardData = response.data || {};
+                    setTotalEmployees(dashboardData.totalEmployees || 0);
+                    setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
+                    setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
+                    const employeeData = dashboardData.records || [];
+                    
+                    // Process and filter unique employees
+                    const uniqueEmployees = {};
+                    employeeData.forEach(employee => {
+                        // Use employeeId as the unique key, or a combination of fields
+                        const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
+                        if (!uniqueEmployees[key]) {
+                            uniqueEmployees[key] = employee;
+                        }
+                    });
+
+                    const uniqueEmployeesList = Object.values(uniqueEmployees);
+                    
+                    // Store original data
+                    setEmployees(uniqueEmployeesList);
+                    // Initialize filtered data with all employees
+                    setFilteredEmployees(uniqueEmployeesList);
+                    // Clear search
+                    setSearchQuery("");
+                    console.log("Data loaded:", uniqueEmployeesList.length, "unique employees");
+                }
             } catch (err) {
                 console.error("Failed to load dashboard data:", err);
-                setError("Failed to load dashboard data.");
-                setEmployees([]); // Clear the table if the API call fails
+                if (isMounted.current) {
+                    setError("Failed to load dashboard data.");
+                    setEmployees([]);
+                    setFilteredEmployees([]);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted.current) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchDashboardData();
-    }, [year]);
+    }, [year, token, url]);
+    
+    // Calculate pagination values whenever filtered data changes
+    useEffect(() => {
+        if (isMounted.current) {
+            const newTotalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
+            setTotalPages(newTotalPages);
+            
+            // Reset to first page when filters change and current page is out of bounds
+            if (currentPage > newTotalPages) {
+                setCurrentPage(1);
+            }
+        }
+    }, [filteredEmployees, itemsPerPage, currentPage]);
+    
+    // Handle search input change
+    const handleSearch = (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+        
+        // If search is cleared, reset to show all employees
+        if (!value || value.trim() === "") {
+            setFilteredEmployees([...employees]);
+        }
+    };
 
+    // Ultra-reliable search function that works for all cases
+    const applySearch = () => {
+        console.log("Applying search for:", searchQuery);
+        console.log("Total employees:", employees.length);
+        
+        // If search is empty, show all employees
+        if (!searchQuery || searchQuery.trim() === "") {
+            console.log("Empty search, showing all employees");
+            setFilteredEmployees([...employees]);
+            return;
+        }
+        
+        // Create new array for filtered results
+        const results = [];
+        const query = searchQuery.toLowerCase().trim();
+        
+        // Manual loop through employees for maximum reliability
+        for (let i = 0; i < employees.length; i++) {
+            const employee = employees[i];
+            
+            // Skip if employee is invalid or has no name
+            if (!employee || !employee.fullName) {
+                continue;
+            }
+            
+            const fullName = employee.fullName.toLowerCase();
+            
+            // Add employee to results if name contains search query
+            if (fullName.indexOf(query) !== -1) {
+                results.push(employee);
+            }
+        }
+        
+        console.log("Search results:", results.length);
+        console.log("Results:", results.map(e => e.fullName));
+        
+        // Update filtered employees with new results array
+        setFilteredEmployees(results);
+        setCurrentPage(1); // Reset to first page after search
+    };
+    
+    // Handle Enter key press in search input
+    const handleSearchKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            applySearch();
+        }
+    };
+    
+    // Get current items for pagination
+    const getCurrentItems = () => {
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        return filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
+    };
+    
+    // Handle page change
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+    
+    // Handle items per page change
+    const handleItemsPerPageChange = (e) => {
+        const value = parseInt(e.target.value);
+        setItemsPerPage(value);
+        setCurrentPage(1); // Reset to first page when changing items per page
+    };
+
+    // Input handler for new employee form
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewEmployeeData((prevData) => ({
@@ -65,15 +203,52 @@ const AdminPage = () => {
         }));
     };
 
+    // Add new employee
     const handleAddEmployee = async (e) => {
         e.preventDefault();
 
-        const { password } = newEmployeeData;
+        const { firstName, lastName, email, password } = newEmployeeData;
+        
+        // Name validation
+        if (firstName.length < 2 || firstName.length > 50) {
+            alert("First name must be between 2 and 50 characters.");
+            return;
+        }
+        
+        if (lastName.length < 2 || lastName.length > 50) {
+            alert("Last name must be between 2 and 50 characters.");
+            return;
+        }
+        
+        // Check for numbers or special characters in names
+        const nameRegex = /^[A-Za-z\s-']+$/;
+        if (!nameRegex.test(firstName)) {
+            alert("First name should only contain letters, spaces, hyphens, or apostrophes.");
+            return;
+        }
+        
+        if (!nameRegex.test(lastName)) {
+            alert("Last name should only contain letters, spaces, hyphens, or apostrophes.");
+            return;
+        }
+        
+        // Email validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            alert("Please enter a valid email address.");
+            return;
+        }
 
         // Password validation
+        if (password.length < 8) {
+            alert("Password must be at least 8 characters long.");
+            return;
+        }
+        
         const hasNonAlphanumeric = /[^a-zA-Z0-9]/.test(password);
         const hasDigit = /\d/.test(password);
         const hasUppercase = /[A-Z]/.test(password);
+        const hasLowercase = /[a-z]/.test(password);
 
         if (!hasNonAlphanumeric) {
             alert("Password must have at least one non-alphanumeric character.");
@@ -87,6 +262,10 @@ const AdminPage = () => {
             alert("Password must have at least one uppercase letter ('A'-'Z').");
             return;
         }
+        if (!hasLowercase) {
+            alert("Password must have at least one lowercase letter ('a'-'z').");
+            return;
+        }
 
         try {
             await axios.post(`${url}/api/Auth/register`, newEmployeeData, {
@@ -96,18 +275,37 @@ const AdminPage = () => {
             alert("Employee added successfully!");
             setShowAddModal(false);
 
-            // Optionally, refresh the dashboard data
+            // Refresh the dashboard data
             const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const dashboardData = response.data || {};
-            setEmployees(dashboardData.records || []);
+            
+            if (isMounted.current) {
+                const dashboardData = response.data || {};
+                const employeeData = dashboardData.records || [];
+                
+                // Process unique employees after adding new one
+                const uniqueEmployees = {};
+                employeeData.forEach(employee => {
+                    const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
+                    if (!uniqueEmployees[key]) {
+                        uniqueEmployees[key] = employee;
+                    }
+                });
+                
+                const uniqueEmployeesList = Object.values(uniqueEmployees);
+                
+                setEmployees(uniqueEmployeesList);
+                setFilteredEmployees(uniqueEmployeesList);
+                setCurrentPage(1); // Reset to first page after adding new employee
+            }
         } catch (err) {
             console.error("Error adding employee:", err);
             alert("Failed to add employee.");
         }
     };
 
+    // Handle year submission
     const handleYearSubmit = async () => {
         try {
             setLoading(true);
@@ -115,17 +313,43 @@ const AdminPage = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            const dashboardData = response.data || {};
-            setTotalEmployees(dashboardData.totalEmployees || 0);
-            setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
-            setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
-            setEmployees(dashboardData.records || []);
+            if (isMounted.current) {
+                const dashboardData = response.data || {};
+                setTotalEmployees(dashboardData.totalEmployees || 0);
+                setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
+                setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
+                const employeeData = dashboardData.records || [];
+                
+                // Process unique employees after year change
+                const uniqueEmployees = {};
+                employeeData.forEach(employee => {
+                    const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
+                    if (!uniqueEmployees[key]) {
+                        uniqueEmployees[key] = employee;
+                    }
+                });
+                
+                const uniqueEmployeesList = Object.values(uniqueEmployees);
+                
+                // Reset everything related to search and set original data
+                setEmployees(uniqueEmployeesList);
+                setFilteredEmployees(uniqueEmployeesList);
+                setSearchQuery(""); // Clear search input
+                setCurrentPage(1); // Reset to first page
+                
+                console.log("Data reset after year change:", uniqueEmployeesList.length, "unique employees");
+            }
         } catch (err) {
             console.error("Failed to load dashboard data:", err);
-            setError("Failed to load dashboard data.");
-            setEmployees([]);
+            if (isMounted.current) {
+                setError("Failed to load dashboard data.");
+                setEmployees([]);
+                setFilteredEmployees([]);
+            }
         } finally {
-            setLoading(false);
+            if (isMounted.current) {
+                setLoading(false);
+            }
         }
     };
 
@@ -144,12 +368,12 @@ const AdminPage = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
                         <img
-                            src="/api/placeholder/40/40" // Replace with the actual profile photo URL
+                            src="/api/placeholder/40/40"
                             alt="User Avatar"
                             className="rounded-full w-10 h-10 cursor-pointer"
-                            onClick={() => navigate("/profile")} // Navigate to the profile page
+                            onClick={() => navigate("/profile")}
                         />
-                        <span>{userInfo?.firstName} {userInfo?.lastName}</span> {/* Dynamically display user name */}
+                        <span>{userInfo?.firstName} {userInfo?.lastName}</span>
                     </div>
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
@@ -164,6 +388,19 @@ const AdminPage = () => {
             </header>
 
             <main className="px-4 py-8 mx-auto max-w-7xl">
+                {/* Error Message Display */}
+                {error && (
+                    <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+                        <p>{error}</p>
+                        <button 
+                            className="mt-2 bg-red-600 text-white px-4 py-1 rounded text-sm"
+                            onClick={() => window.location.reload()}
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
                 {/* Dashboard Summary */}
                 <div className="mb-4 flex items-center gap-6 text-sm text-gray-700">
                     <p>
@@ -177,21 +414,42 @@ const AdminPage = () => {
                     </p>
                 </div>
 
-                {/* Year Input */}
-                <div className="flex justify-between items-center mb-4">
-                    <input
-                        type="text"
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md"
-                        placeholder="Enter Year"
-                    />
-                    <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        onClick={handleYearSubmit} // Trigger the API call
-                    >
-                        Submit
-                    </button>
+                {/* Year Input and Search Area */}
+                <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={year}
+                                onChange={(e) => setYear(e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-md w-48"
+                                placeholder="Enter Year"
+                            />
+                            <button
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                onClick={handleYearSubmit}
+                            >
+                                Submit
+                            </button>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={handleSearch}
+                                onKeyPress={handleSearchKeyPress}
+                                className="px-3 py-2 border border-gray-300 rounded-md w-48"
+                                placeholder="Search by employee"
+                            />
+                            <button
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                onClick={applySearch}
+                            >
+                                Submit
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Employee Management */}
@@ -209,14 +467,13 @@ const AdminPage = () => {
                                 try {
                                     const response = await axios.get(`${url}/api/Dashboard/csv`, {
                                         headers: { Authorization: `Bearer ${token}` },
-                                        responseType: 'blob', // Ensure the response is treated as a file
+                                        responseType: 'blob',
                                     });
 
-                                    // Create a URL for the file and trigger a download
                                     const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
                                     const link = document.createElement('a');
                                     link.href = urlBlob;
-                                    link.setAttribute('download', 'dashboard_data.csv'); // Set the file name
+                                    link.setAttribute('download', 'dashboard_data.csv');
                                     document.body.appendChild(link);
                                     link.click();
                                     link.remove();
@@ -306,22 +563,28 @@ const AdminPage = () => {
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-blue-600 text-white">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certificate</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Issue Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cert Expiry Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Role</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Grade</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Certificate</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cert Issue Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cert Expiry Date</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {employees.length > 0 ? (
-                                    employees.map((employee) => (
-                                        <tr key={employee.employeeId}>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                                            Loading...
+                                        </td>
+                                    </tr>
+                                ) : getCurrentItems().length > 0 ? (
+                                    getCurrentItems().map((employee, index) => (
+                                        <tr key={employee.employeeId || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.fullName}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.email}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.department || "N/A"}</td>
@@ -343,13 +606,151 @@ const AdminPage = () => {
                                 ) : (
                                     <tr>
                                         <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
-                                            No employees found.
+                                            {searchQuery ? "No employees found matching your search." : "No employees found."}
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+                    
+                    {/* Pagination Controls */}
+                    {filteredEmployees.length > 0 && (
+                        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div className="flex-1 flex justify-between sm:hidden">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                                        currentPage === 1
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                                        currentPage === totalPages
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                <p className="text-sm text-gray-700">
+                                  Showing <span className="font-medium">
+                                    {filteredEmployees.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                                  </span> to{" "}
+                                  <span className="font-medium">
+                                    {Math.min(currentPage * itemsPerPage, filteredEmployees.length)}
+                                  </span> of{" "}
+                                  <span className="font-medium">{filteredEmployees.length}</span> results
+                                </p>
+                                </div>
+                                <div className="flex items-center">
+                                    <label htmlFor="itemsPerPage" className="mr-2 text-sm text-gray-600">Show</label>
+                                    <select
+                                        id="itemsPerPage"
+                                        value={itemsPerPage}
+                                        onChange={handleItemsPerPageChange}
+                                        className="mr-4 px-2 py-1 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    >
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                        <option value={15}>15</option>
+                                        <option value={20}>20</option>
+                                        <option value={25}>25</option>
+                                    </select>
+                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button
+                                            onClick={() => handlePageChange(1)}
+                                            disabled={currentPage === 1}
+                                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                                                currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <span className="sr-only">First</span>
+                                            <span>First</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                                                currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <span className="sr-only">Previous</span>
+                                            <span>Prev</span>
+                                        </button>
+                                        
+                                        {/* Page Number Buttons */}
+                                        {[...Array(totalPages).keys()].map((number) => {
+                                            const pageNumber = number + 1;
+                                            if (
+                                                pageNumber === 1 || 
+                                                pageNumber === totalPages || 
+                                                (pageNumber >= currentPage - 2 && pageNumber <= currentPage + 2)
+                                            ) {
+                                                return (
+                                                    <button
+                                                        key={pageNumber}
+                                                        onClick={() => handlePageChange(pageNumber)}
+                                                        className={`relative inline-flex items-center px-4 py-2 border ${
+                                                            currentPage === pageNumber
+                                                            ? "bg-blue-50 border-blue-500 text-blue-600 z-10"
+                                                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                                                        } text-sm font-medium`}
+                                                    >
+                                                        {pageNumber}
+                                                    </button>
+                                                );
+                                            } else if (
+                                                (pageNumber === currentPage - 3 && currentPage > 3) || 
+                                                (pageNumber === currentPage + 3 && currentPage < totalPages - 2)
+                                            ) {
+                                                return (
+                                                    <span
+                                                        key={pageNumber}
+                                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700"
+                                                    >
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                        
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                                                currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <span className="sr-only">Next</span>
+                                            <span>Next</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handlePageChange(totalPages)}
+                                            disabled={currentPage === totalPages}
+                                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                                                currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <span className="sr-only">Last</span>
+                                            <span>Last</span>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
