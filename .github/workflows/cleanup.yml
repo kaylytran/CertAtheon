@@ -49,24 +49,38 @@ jobs:
 
             console.log(`✅ Cleanup complete. Deleted ${deleted} artifacts.`);
 
-      - name: Delete old caches using GitHub REST API
+      - name: Delete old caches using GitHub REST API (with debugging)
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          set -e  # Stop on first error
           echo "🧹 Deleting caches using REST API..."
 
           REPO="${{ github.repository }}"
           AUTH_HEADER="Authorization: token $GH_PAT"
 
-          response=$(curl -s -H "$AUTH_HEADER" https://api.github.com/repos/$REPO/actions/caches)
+          echo "🔍 Sending GET request to list caches..."
+          response=$(curl -s -w "%{http_code}" -o response.json -H "$AUTH_HEADER" https://api.github.com/repos/$REPO/actions/caches)
+          http_code=$(tail -n1 <<< "$response")
 
-          echo "$response" | jq -e '.actions_caches | length > 0' >/dev/null 2>&1
-          if [ $? -eq 0 ]; then
-            echo "$response" | jq -r '.actions_caches[].id' | while read -r cache_id; do
+          if [[ "$http_code" != "200" ]]; then
+            echo "❌ Failed to fetch caches. Status: $http_code"
+            echo "Response:"
+            cat response.json
+            exit 1
+          fi
+
+          echo "✅ Fetched cache info:"
+          cat response.json
+
+          echo "🔍 Checking if any caches exist..."
+          if jq -e '.actions_caches | length > 0' response.json > /dev/null 2>&1; then
+            jq -r '.actions_caches[].id' response.json | while read -r cache_id; do
               echo "🗑️ Deleting cache ID: $cache_id"
-              curl -s -X DELETE -H "$AUTH_HEADER" \
-                https://api.github.com/repos/$REPO/actions/caches/$cache_id
+              curl -s -X DELETE -H "$AUTH_HEADER" https://api.github.com/repos/$REPO/actions/caches/$cache_id
             done
+            echo "✅ Cache cleanup complete."
           else
             echo "✅ No caches to delete."
           fi
+
