@@ -48,3 +48,17 @@ jobs:
             }
 
             console.log(`✅ Cleanup complete. Deleted ${deleted} artifacts.`);
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
+
+      - name: Delete old caches
+        run: |
+          echo "🧹 Deleting caches..."
+          for cache_id in $(gh api repos/${{ github.repository }}/actions/caches --paginate -q '.actions_caches[] | .id'); do
+            echo "🗑️ Deleting cache $cache_id"
+            gh api --method DELETE repos/${{ github.repository }}/actions/caches/$cache_id
+          done
