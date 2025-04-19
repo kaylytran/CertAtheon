@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Services;
 using Backend.Models;
 using Backend.Schemas;
 using Microsoft.AspNetCore.Authorization;
@@ -17,10 +18,17 @@ namespace Backend.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        
-        public DashboardController(ApplicationDbContext context)
+        private readonly IBlobService _blobService;
+        private readonly IConfiguration _configuration;
+
+        public DashboardController(
+            ApplicationDbContext context,
+            IBlobService blobService,
+            IConfiguration configuration)
         {
             _context = context;
+            _blobService = blobService;
+            _configuration = configuration;
         }
         
         // GET: api/dashboard?year=2025&offset=0&limit=20&nameFilter=John
@@ -151,6 +159,61 @@ namespace Backend.Controllers
                 Limit                     = limit,           // null if not supplied
                 Records                   = pagedRecords
             };
+        }
+
+        /// Uploads an XLSX file containing the Employee Feed into the EmployeeFeeds container.
+        [HttpPost("upload-employee-feed")]
+        public async Task<IActionResult> UploadEmployeeFeed(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            // generate a unique blob name
+            var blobName = $"employee-feed_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+
+            // container name from config or hard-coded
+            var container = _configuration["AzureBlobStorage:EmployeeFeedContainer"];
+            if (string.IsNullOrWhiteSpace(container))
+                return StatusCode(StatusCodes.Status500InternalServerError, "EmployeeFeedContainer is not configured.");
+
+            // upload
+            string url;
+            try
+            {
+                url = await _blobService.UploadFileAsync(file, blobName, container);
+            }
+            catch (Exception ex)
+            {
+                // log and surface error
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to upload employee feed: {ex.Message}");
+            }
+
+            return Ok(new { message = "Employee feed uploaded.", url });
+        }
+
+        /// Uploads an XLSX file containing the Certificate Feed into the CertificateFeeds container.
+        [HttpPost("upload-certificate-feed")]
+        public async Task<IActionResult> UploadCertificateFeed(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            var blobName = $"certificate-feed_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var container = _configuration["AzureBlobStorage:CertificateFeedContainer"];
+            if (string.IsNullOrWhiteSpace(container))
+                return StatusCode(StatusCodes.Status500InternalServerError, "CertificateFeedContainer is not configured.");
+
+            string url;
+            try
+            {
+                url = await _blobService.UploadFileAsync(file, blobName, container);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to upload certificate feed: {ex.Message}");
+            }
+
+            return Ok(new { message = "Certificate feed uploaded.", url });
         }
     }
 }
