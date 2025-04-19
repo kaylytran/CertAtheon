@@ -23,96 +23,133 @@ namespace Backend.Controllers
             _context = context;
         }
         
-        // GET: api/dashboard?year=2025
+        // GET: api/dashboard?year=2025&offset=0&limit=20&nameFilter=John
         [HttpGet]
-        public async Task<IActionResult> GetDashboard([FromQuery] int? year)
+        public async Task<IActionResult> GetDashboard(
+            [FromQuery] int? year,
+            [FromQuery] int offset = 0,
+            [FromQuery] int? limit = null,
+            [FromQuery] string? nameFilter = null)
         {
-            var response = await BuildDashboardReport(year);
-            return Ok(response);
+            var report = await BuildDashboardReport(year, offset, limit, nameFilter);
+            return Ok(report);
         }
 
-        // GET: api/dashboard/csv?year=2025
-        // Returns the dashboard report as a CSV file.
+        // GET: api/dashboard/csv?year=2025&offset=0&limit=20&nameFilter=John
         [HttpGet("csv")]
-        public async Task<IActionResult> GetDashboardCsv([FromQuery] int? year)
+        public async Task<IActionResult> GetDashboardCsv(
+            [FromQuery] int? year,
+            [FromQuery] int offset = 0,
+            [FromQuery] int? limit = null,
+            [FromQuery] string? nameFilter = null)
         {
-            var report = await BuildDashboardReport(year);
-            // Build CSV content.
+            var report = await BuildDashboardReport(year, offset, limit, nameFilter);
+
             var csvBuilder = new StringBuilder();
-            // Header row.
             csvBuilder.AppendLine("EmployeeId,FullName,Role,Grade,Email,CertificateName,CertificateLevel,CertifiedDate,ExpiryDate");
-            // Dashboard records.
+
             foreach (var record in report.Records)
             {
-                csvBuilder.AppendLine($"{record.EmployeeId},{record.FullName},{record.Role},{record.Grade},{record.Email},{record.CertificateName},{record.CertificateLevel},{record.CertifiedDate},{record.ExpiryDate}");
+                csvBuilder.AppendLine(
+                    $"{record.EmployeeId}," +
+                    $"{record.FullName}," +
+                    $"{record.Role}," +
+                    $"{record.Grade}," +
+                    $"{record.Email}," +
+                    $"{record.CertificateName}," +
+                    $"{record.CertificateLevel}," +
+                    $"{record.CertifiedDate}," +
+                    $"{record.ExpiryDate}"
+                );
             }
+
             byte[] csvBytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             return File(csvBytes, "text/csv", "DashboardReport.csv");
         }
         
-        // Helper method to build the dashboard report.
-        private async Task<dynamic> BuildDashboardReport(int? year)
+        // Helper to build, filter, paginate, and return the dashboard data.
+        private async Task<dynamic> BuildDashboardReport(
+            int? year,
+            int offset,
+            int? limit,
+            string? nameFilter)
         {
             int targetYear = year ?? DateTime.UtcNow.Year;
             
-            // Retrieve all employees excluding managers from Identity's Users table.
+            // 1) load employees (non-managers)
             var employees = await _context.Users
                                           .Where(u => u.AppRole != "Manager")
                                           .ToListAsync();
             int totalEmployees = employees.Count;
-            
-            // Retrieve all certificate catalog entries.
+
+            // 2) load catalog + certificates for that year
             var catalogEntries = await _context.CertificateCatalogs.ToListAsync();
-            
-            // Retrieve certificates for the target year.
-            var certificates = await _context.Certificates
+            var certificates   = await _context.Certificates
                 .Where(c => c.CertifiedDate.Year == targetYear)
                 .ToListAsync();
             
-            // For each employee (non-manager) and each catalog entry, create a dashboard record.
-            var dashboardRecords = employees.SelectMany(emp =>
-            {
-                return catalogEntries.Select(catalog =>
+            // 3) build full in‑memory dashboard list
+            var allRecords = employees
+                .SelectMany(emp => catalogEntries, (emp, catalog) =>
                 {
-                    // Find the certificate record for this employee and catalog entry.
-                    var cert = certificates.FirstOrDefault(x => x.UserId == emp.Id && x.CertificateCatalogId == catalog.Id);
-                    
+                    var cert = certificates.FirstOrDefault(c =>
+                        c.UserId == emp.Id &&
+                        c.CertificateCatalogId == catalog.Id);
+
                     return new DashboardRecord
                     {
-                        EmployeeId = emp.Id,
-                        FullName = $"{emp.FirstName} {emp.LastName}",
-                        Role = emp.AppRole,         // Using AppRole from the user.
-                        Grade = emp.JobTitle,       // Using JobTitle as Grade.
-                        Email = emp.Email,
-                        CertificateName = catalog.CertificateName,
+                        EmployeeId       = emp.Id,
+                        FullName         = $"{emp.FirstName} {emp.LastName}",
+                        Role             = emp.AppRole,
+                        Grade            = emp.JobTitle,
+                        Email            = emp.Email,
+                        CertificateName  = catalog.CertificateName,
                         CertificateLevel = catalog.CertificateLevel,
-                        CertifiedDate = cert != null 
-                            ? cert.CertifiedDate.ToString("yyyy-MM-dd") 
+                        CertifiedDate    = cert != null
+                            ? cert.CertifiedDate.ToString("yyyy-MM-dd")
                             : "No Certificate",
-                        ExpiryDate = cert != null 
-                            ? cert.ValidTill.ToString("yyyy-MM-dd") 
+                        ExpiryDate       = cert != null
+                            ? cert.ValidTill.ToString("yyyy-MM-dd")
                             : "No Certificate"
                     };
-                });
-            }).ToList();
+                })
+                .ToList();
             
-            // Calculate overall adoption rate:
-            // Count distinct employees with at least one certificate record in the target year.
+            // 4) name filter
+            if (!string.IsNullOrWhiteSpace(nameFilter))
+            {
+                allRecords = allRecords
+                    .Where(r => r.FullName
+                        .Contains(nameFilter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            
+            // 5) pagination
+            var paged = allRecords.Skip(offset);
+            if (limit.HasValue)
+                paged = paged.Take(limit.Value);
+            var pagedRecords = paged.ToList();
+            
+            // 6) adoption rate (based on all employees, not just paged/filtered)
             int employeesWithCertificate = certificates
-                                               .Where(c => employees.Any(emp => emp.Id == c.UserId))
-                                               .Select(c => c.UserId)
-                                               .Distinct()
-                                               .Count();
-            double adoptionRate = totalEmployees > 0 
-                ? ((double)employeesWithCertificate / totalEmployees) * 100 
+                .Where(c => employees.Any(e => e.Id == c.UserId))
+                .Select(c => c.UserId)
+                .Distinct()
+                .Count();
+            double adoptionRate = totalEmployees > 0
+                ? (employeesWithCertificate / (double)totalEmployees) * 100
                 : 0;
             
+            // 7) return meta + paged records
             return new 
             {
-                TotalEmployees = totalEmployees,
-                EmployeesWithCertificate = employeesWithCertificate,
-                OverallAdoptionRate = adoptionRate,
-                Records = dashboardRecords
+                TotalEmployees            = totalEmployees,
+                EmployeesWithCertificate  = employeesWithCertificate,
+                OverallAdoptionRate       = adoptionRate,
+                TotalRecords              = allRecords.Count,
+                Offset                    = offset,
+                Limit                     = limit,           // null if not supplied
+                Records                   = pagedRecords
             };
         }
     }
