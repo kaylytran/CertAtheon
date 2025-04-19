@@ -10,19 +10,42 @@ namespace Backend.Services
 {
     public class BlobService : IBlobService, IAsyncDisposable
     {
-        private readonly BlobContainerClient _containerClient;
+        private readonly string _connectionString;
+        private readonly BlobContainerClient _defaultContainerClient;
+        private readonly string _defaultContainerName;
 
         public BlobService(IConfiguration configuration)
         {
-            var connectionString = configuration["AzureBlobStorage:ConnectionString"];
-            var containerName = configuration["AzureBlobStorage:ContainerName"];
-            _containerClient = new BlobContainerClient(connectionString, containerName);
-            _containerClient.CreateIfNotExists(PublicAccessType.Blob);
+            _connectionString = configuration["AzureBlobStorage:ConnectionString"]
+                                ?? throw new ArgumentNullException("AzureBlobStorage:ConnectionString");
+            _defaultContainerName = configuration["AzureBlobStorage:ContainerName"]
+                                    ?? throw new ArgumentNullException("AzureBlobStorage:ContainerName");
+
+            // Initialize default container client (for profile pictures)
+            _defaultContainerClient = new BlobContainerClient(_connectionString, _defaultContainerName);
+            _defaultContainerClient.CreateIfNotExists(PublicAccessType.Blob);
         }
 
-        public async Task<string> UploadFileAsync(IFormFile file, string blobName)
+        /// <summary>
+        /// Uploads to the default (profilepictures) container.
+        /// </summary>
+        public Task<string> UploadFileAsync(IFormFile file, string blobName)
         {
-            BlobClient blobClient = _containerClient.GetBlobClient(blobName);
+            return UploadFileAsync(file, blobName, _defaultContainerName);
+        }
+
+        /// <summary>
+        /// Uploads to a specified container (creating it if it doesn't exist).
+        /// </summary>
+        public async Task<string> UploadFileAsync(IFormFile file, string blobName, string containerName)
+        {
+            if (file == null) throw new ArgumentNullException(nameof(file));
+            if (string.IsNullOrWhiteSpace(containerName)) throw new ArgumentNullException(nameof(containerName));
+
+            var containerClient = new BlobContainerClient(_connectionString, containerName);
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
             using (var stream = file.OpenReadStream())
             {
                 await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
@@ -32,7 +55,7 @@ namespace Backend.Services
 
         public ValueTask DisposeAsync()
         {
-            // BlobContainerClient does not require disposal.
+            // BlobContainerClient does not implement IDisposable.
             return ValueTask.CompletedTask;
         }
     }

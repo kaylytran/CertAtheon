@@ -29,9 +29,11 @@ namespace Backend.Controllers
             _messageSender = messageSender;
         }
         
-        // GET: api/certificates
+        // GET: api/certificates?offset=0&limit=10
         [HttpGet]
-        public async Task<IActionResult> GetCertificates()
+        public async Task<IActionResult> GetCertificates(
+            [FromQuery] int offset = 0,
+            [FromQuery] int? limit = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -39,26 +41,44 @@ namespace Backend.Controllers
                 _logger.LogWarning("User ID not found in claims.");
                 return Unauthorized("User ID not found.");
             }
-            
-            // Include CertificateCatalog to obtain CertificateName.
-            var certificates = await _context.Certificates
+
+            // Base query: only this user's certificates, include catalog for Name
+            var query = _context.Certificates
                 .Include(c => c.CertificateCatalog)
                 .Where(c => c.UserId == userId)
-                .ToListAsync();
+                .OrderBy(c => c.Id)    // ensure deterministic paging
+                .AsQueryable();
 
-            // Project each certificate to include CertificateName.
-            var result = certificates.Select(c => new 
+            // total before paging
+            var totalCertificates = await query.CountAsync();
+
+            // apply paging
+            var paged = query.Skip(offset);
+            if (limit.HasValue)
+                paged = paged.Take(limit.Value);
+
+            var certificates = await paged.ToListAsync();
+
+            // project results
+            var items = certificates.Select(c => new 
             {
                 c.Id,
                 c.CertificateCatalogId,
                 c.CertifiedDate,
                 c.ValidTill,
                 c.UserId,
-                CertificateName = c.CertificateCatalog != null ? c.CertificateCatalog.CertificateName : null
+                CertificateName = c.CertificateCatalog?.CertificateName
             });
 
-            return Ok(result);
+            return Ok(new
+            {
+                TotalCertificates = totalCertificates,
+                Offset = offset,
+                Limit = limit,
+                Records = items
+            });
         }
+
         
         // GET: api/certificates/{id}
         [HttpGet("{id}")]
