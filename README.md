@@ -32,8 +32,6 @@ Employees can be add multiple ways, but only by the Manager. Once the Manager ha
 Once a user (Manager/Employee) is created, they will get an email about their account creation with the email and temporary password.
 Since the password is being sent through an email and this can be unsecure, when the user first login, they will be directed to a change paassword page. 
 
----
-
 ### Manager Feactures
 
 1. **Home Screen**
