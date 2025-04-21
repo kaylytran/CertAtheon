@@ -26,22 +26,39 @@ Managers have to be added directly to the database. This can be done through Swa
 
 Employees can be add multiple ways, but only by the Manager. Once the Manager has an account and can access the website they can:
 1. To add multiple empolyees at a time, drop and excel file with the fields: id, first_name, last_name, email, phone, grade, role, username
-2. Managers can add one employee at a time through the "Add Employee" button on the "Dashboard" page.
-3. This can be done through Swagger as well. (api/Auth/register)
+2. Managers can add one employee at a time through the "Add Employee" button on the "Dashboard" page. This can be done through Swagger as well. (api/Auth/register)
 
 Once a user (Manager/Employee) is created, they will get an email about their account creation with the email and temporary password.
 Since the password is being sent through an email and this can be unsecure, so when the user first login, they will be directed to a "Change Paassword" page. 
 
 ### Manager Features
 
-1. **Home Screen**
+1. **Home Screen - My certification**
+   - User will be able to see all of their certificates and the following information: Certification Name, Certified Date, Certificate Level, Expiry Date.
+   - User will be able to Edit or Delete a certificate.
+   - User will be able to drag and drop a pdf file of their certificate for easy input.
+2. **Ceritificate Catalogue Screen**
+   - User will be able to see all of the certifiactes required/needed for their company
+   - Manger will be able to add certificates to the Certificate Catalogue
+   wip
+3. **Admin Dashboard - Employee Management**
+   - Manager will be able to see all employees and all certificate status.
+   - Manager will be able to filter by year to see total number of employees, employees with certificates, and overall adoption rate.
+   wip
+4. **Profile Page**
+   - User will be able to see all of their information.
+   - User will be able to upload/change their profile picture.
+   - User will be able to change their password if desired.
 
 
 ### Employee Features
 
-1. **Home Screen**
-
-
+1. **Home Screen - My Certifications**
+   - Same as manager.
+2. **Certificate Catalogue Screen**
+   - Same as manager, but can not add certificates.
+3. **Profile Page**
+   - Same as manager.
 ---
 
 ## Tech Stack
@@ -106,7 +123,7 @@ After having everything downloaded and your connection string to your database, 
 dotnet run
 ```
 in the Backend folder, this will launch the frontend and backend.
-
+# TODO, connection
 ---
 
 ## Team Members
