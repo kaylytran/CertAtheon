@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Azure;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Backend.Data;
 using Backend.Models;
 using Backend.Schemas;
@@ -21,12 +24,24 @@ namespace Backend.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ILogger<CertificatesController> _logger;
         private readonly IMessageSenderService _messageSender;
+        private readonly DocumentAnalysisClient _analysisClient;
+        private readonly IBlobService _blobService;
+        private readonly IConfiguration _configuration;
 
-        public CertificatesController(ApplicationDbContext context, ILogger<CertificatesController> logger, IMessageSenderService messageSender)
+        public CertificatesController(
+            IBlobService blobService,
+            ApplicationDbContext context, 
+            ILogger<CertificatesController> logger, 
+            IMessageSenderService messageSender,
+            DocumentAnalysisClient analysisClient,
+            IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
             _messageSender = messageSender;
+            _analysisClient = analysisClient;
+            _blobService    = blobService;
+            _configuration = configuration; 
         }
         
         // GET: api/certificates?offset=0&limit=10
@@ -67,7 +82,8 @@ namespace Backend.Controllers
                 c.CertifiedDate,
                 c.ValidTill,
                 c.UserId,
-                CertificateName = c.CertificateCatalog?.CertificateName
+                CertificateName = c.CertificateCatalog?.CertificateName,
+                c.DocumentUrl
             });
 
             return Ok(new
@@ -160,6 +176,102 @@ namespace Backend.Controllers
             }
 
             return CreatedAtAction(nameof(GetCertificateById), new { id = certificate.Id }, certificate);
+        }
+
+        // POST: api/certificates/upload
+        [HttpPost("upload")]
+        [RequestSizeLimit(10_000_000)] // 10 MB max
+        public async Task<IActionResult> ExtractCertificateText(IFormFile file)
+        {
+            // 1) validation
+            if (file == null || file.Length == 0)
+                return BadRequest("Please upload a non-empty PDF file.");
+
+            if (!file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(file.FileName).ToLower() != ".pdf")
+            {
+                return BadRequest("Only PDF files are allowed.");
+            }
+
+            // 2) figure out who owns this file
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (String.IsNullOrEmpty(userId))
+                return Unauthorized("User not identified.");
+
+            // 3) upload it into blob storage under a per‑user folder                        
+            var ext       = Path.GetExtension(file.FileName);
+            var blobName  = $"certificates/{userId}/{Guid.NewGuid()}{ext}";
+            var container = _configuration["AzureBlobStorage:CertificateFilesContainer"];
+            if (string.IsNullOrWhiteSpace(container))
+                return StatusCode(StatusCodes.Status500InternalServerError, "CertificateFilesContainer is not configured.");
+            
+            string blobUrl;
+            try
+            {
+                blobUrl = await _blobService.UploadFileAsync(file, blobName, container);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading file to blob storage.");
+                // fail the request or proceed without analysis?
+                return StatusCode(500, "Failed to store file.");
+            }
+
+            // 4) copy into a memory stream so we can both upload AND analyze
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            ms.Position = 0;
+
+            // 5) run the FormRecognizer “prebuilt-read” model and wait for completion
+            AnalyzeDocumentOperation operation;
+            try
+            {
+                operation = await _analysisClient
+                    .AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-read", ms);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form‐recognizer analysis failed.");
+                // but we already stored the blob ok, so return the blob url to the client
+                return Ok(new {
+                  fileName = file.FileName,
+                  blobUrl,
+                  lines = Array.Empty<string>(), 
+                  pageCount = 0,
+                  warning = "Analysis failed, but file was stored."
+                });
+            }
+
+            var result = operation.Value;
+
+            // 6) pull out all lines of text
+            var lines = result.Pages
+                              .SelectMany(p => p.Lines)
+                              .Select(l => l.Content)
+                              .ToList();
+
+            // heuristics to pick out the three fields
+            // 1) CertificateName: look for the line containing "Microsoft Certified"
+            var certName = lines.FirstOrDefault(l => l.StartsWith("Microsoft Certified", StringComparison.OrdinalIgnoreCase))
+                        ?? "Unknown Certificate";
+
+            // 2) IssueDate: look for "Earned on:" or similar
+            var issueLine = lines.FirstOrDefault(l => l.StartsWith("Earned on", StringComparison.OrdinalIgnoreCase));
+            // split on ':' to get date portion
+            var issueDate = issueLine?.Split(':', 2)[1].Trim() ?? "Unknown";
+
+            // 3) ExpiryDate: look for "Expires on:" or similar
+            var expiryLine = lines.FirstOrDefault(l => l.StartsWith("Expires on", StringComparison.OrdinalIgnoreCase));
+            var expiryDate = expiryLine?.Split(':', 2)[1].Trim() ?? "Unknown";                        
+
+            // 7) return both the URL and the extracted text
+            return Ok(new
+            {
+                blobUrl,
+                CertificateName = certName,
+                IssueDate       = issueDate,
+                ExpiryDate      = expiryDate
+            });
         }
         
         // PUT: api/certificates/{id}
