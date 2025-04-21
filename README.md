@@ -30,7 +30,7 @@ Employees can be add multiple ways, but only by the Manager. Once the Manager ha
 3. This can be done through Swagger as well. (api/Auth/register)
 
 Once a user (Manager/Employee) is created, they will get an email about their account creation with the email and temporary password.
-Since the password is being sent through an email and this can be unsecure, when the user first login, they will be directed to a change paassword page. 
+Since the password is being sent through an email and this can be unsecure, so when the user first login, they will be directed to a "Change Paassword" page. 
 
 ### Manager Features
 
