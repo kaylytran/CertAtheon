@@ -32,33 +32,18 @@ Employees can be add multiple ways, but only by the Manager. Once the Manager ha
 Once a user (Manager/Employee) is created, they will get an email about their account creation with the email and temporary password.
 Since the password is being sent through an email and this can be unsecure, when the user first login, they will be directed to a change paassword page. 
 
+---
 
-### Admin Feactures
+### Manager Feactures
 
 1. **Home Screen**
-   - View all uploaded certifications
-   - Quick access to key actions: upload, validate, manage
-
-2. **Certificate Management**
-   - Add, edit, or delete certifications
-   - Real-time status updates
-
-3. **Notification System**
-   - System alerts for expiring or newly added certifications
-
-4. **Dashboard**
-   - Admin view of team certification progress
-   - Summary stats
-
-5. **Profile & Certificate Catalog**
-   - View and update user details
-   - Browse searchable certificate catalog
-
----
-
 
 
 ---
+
+### Employee Feactures
+
+1. **Home Screen**
 
 
 ---
