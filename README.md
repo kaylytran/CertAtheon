@@ -1,6 +1,6 @@
 # CertAethon – Certification Tracker Platform
 
-CertAethon is a cloud-native certification management platform developed for CSCE 590 – Azure Cloud Native Development. It enables employees and administrators to manage, validate, and track certifications in real time, leveraging a modern Azure-based microservices architecture.
+CertAethon is a cloud-native certification management platform developed for CSCE 590 – Azure Cloud Native Development. It enables employees and administrators to add, manage, validate, and track certifications in real time, leveraging a modern Azure-based microservices architecture.
 
 > Developed by Team CertAefied Copilots 
 
@@ -18,7 +18,22 @@ CertAethon is a full-stack web application designed to:
 
 ## Features
 
-### Core Use Cases
+### Account Creation
+
+Users are not able to "sign up" and make their own accounts. 
+
+Managers have to be added directly to the database. This can be done through Swagger as well. (api/Manager/register)
+
+Employees can be add multiple ways, but only by the Manager. Once the Manager has an account and can access thhe website they can:
+1. Drop and excel file with the fields: id, first_name, last_name, email, phone, grade, role, username
+   - This allows Managers to add multiple employees at once.
+2. Managers can add one employee at a time through the "Add Employee" button on the "Dashboard" page.
+
+Once a user (Manager/Employee) is created, they will get an email about their account creation with the email and temporary password.
+Since the password is being sent through an email and this can be unsecure, when the user first login, they will be directed to a change paassword page. 
+
+
+### Admin Feactures
 
 1. **Home Screen**
    - View all uploaded certifications
@@ -41,62 +56,17 @@ CertAethon is a full-stack web application designed to:
 
 ---
 
-## Epic 5: Real-Time Data Loading
 
-**Feature 5.1: Employee and Certificate Feed Integration**
-- Automatically loads employee and certificate data from external feeds into the database.
-- Ensures data is always current by triggering updates in real time.
-
-**User Stories:**
-- As an admin, I want the system to process feeds automatically so that the database is always current.
-- As an admin, I want to avoid manual updates and let the system manage data ingestion.
-
-**Acceptance Criteria:**
-- Feeds are processed automatically and in real time.
-- Data is accurately persisted into Azure SQL Database.
 
 ---
 
-## Epic 6: Smart Certificate Validation
-
-**Feature 6.1: OCR-Powered Certificate Parsing**
-- Users upload certificate PDFs directly from the Home Screen.
-- Azure Cognitive Services (OCR) extract:
-  - Certificate Name
-  - Issue Date
-  - Expiry Date
-
-**User Stories:**
-1. Upload PDF to system
-2. Auto-extract certificate info via OCR
-3. Review/edit extracted info
-4. Save certificate to the system
-5. View/manage uploaded certificates
-
-**Benefits:**
-- Reduces manual data entry
-- Improves accuracy using AI
-- Enhances user experience
-
----
-
-## Optional Features
-
-### Optional Use Case 1: Login and Authentication
-- Secure login page
-- Password change functionality
-- Forced password change on first login
-
-### Optional Use Case 2: Profile Picture Upload
-- Upload profile pictures to Azure Blob Storage
-- Integrated into the user profile
 
 ---
 
 ## Tech Stack
 
 ### Development Tools
-- Visual Studio (C#/.NET 8)
+- Visual Studio (C#/.NET 9)
 - Azure Data Studio
 
 ### Frontend
@@ -105,7 +75,7 @@ CertAethon is a full-stack web application designed to:
 - HTML, JavaScript
 
 ### Backend
-- .NET Core 8 Web API
+- .NET Core 9 Web API
 - RESTful services
 - Entity Framework Core
 
@@ -129,7 +99,7 @@ CertAethon is a full-stack web application designed to:
 ## Setup Instructions
 
 ### Prerequisites
-- [.NET 8 SDK](https://dotnet.microsoft.com/)
+- [.NET 9 SDK](https://dotnet.microsoft.com/)
 - [Node.js 18+](https://nodejs.org/)
 - Azure Account with appropriate service access
 
@@ -148,7 +118,7 @@ npm install
 npm run dev
 ```
 Access API via Swagger: https://localhost:<port>/swagger
-Access frontend: http://localhost:5173
+Access frontend: http://localhost:<port>
 
 After having everything downloaded and your connection string to your database, running
 ```
