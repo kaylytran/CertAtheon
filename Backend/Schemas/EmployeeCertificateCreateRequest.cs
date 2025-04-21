@@ -13,5 +13,7 @@ namespace Backend.Schemas
 
         [Required]
         public DateTime ValidTill { get; set; }
+
+        public string? DocumentUrl { get; set; }
     }
 }
