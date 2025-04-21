@@ -25,8 +25,7 @@ Users are not able to "sign up" and make their own accounts.
 Managers have to be added directly to the database. This can be done through Swagger as well. (api/Manager/register)
 
 Employees can be add multiple ways, but only by the Manager. Once the Manager has an account and can access the website they can:
-1. Drop and excel file with the fields: id, first_name, last_name, email, phone, grade, role, username
-   - This allows Managers to add multiple employees at once.
+1. To add multiple empolyees at a time, drop and excel file with the fields: id, first_name, last_name, email, phone, grade, role, username
 2. Managers can add one employee at a time through the "Add Employee" button on the "Dashboard" page.
 3. This can be done through Swagger as well. (api/Auth/register)
 
