@@ -261,7 +261,9 @@ namespace Backend.Controllers
             var issueDate = issueLine?.Split(':', 2)[1].Trim() ?? "Unknown";
 
             // 3) ExpiryDate: look for "Expires on:" or similar
-            var expiryLine = lines.FirstOrDefault(l => l.StartsWith("Expires on", StringComparison.OrdinalIgnoreCase));
+            var expiryLine = lines.FirstOrDefault(l =>
+                l.StartsWith("Expires on", StringComparison.OrdinalIgnoreCase) ||
+                l.StartsWith("Expired on",  StringComparison.OrdinalIgnoreCase));
             var expiryDate = expiryLine?.Split(':', 2)[1].Trim() ?? "Unknown";                        
 
             // 7) return both the URL and the extracted text

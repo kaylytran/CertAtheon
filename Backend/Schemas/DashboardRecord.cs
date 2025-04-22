@@ -16,6 +16,7 @@ namespace Backend.Schemas
         // Dates as strings so we can show "No Certificate" if missing
         public string CertifiedDate { get; set; }
         public string ExpiryDate { get; set; }
+        public string? DocumentUrl { get; set; }
     }
 }
 //                     return new[] { new DashboardRecord
