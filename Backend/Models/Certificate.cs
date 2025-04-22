@@ -21,5 +21,6 @@ namespace Backend.Models
 
         [Required]
         public string UserId { get; set; }
+        public string? DocumentUrl { get; set; }
     }
 }

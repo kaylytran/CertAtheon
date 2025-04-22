@@ -8,6 +8,8 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Azure;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,6 +104,14 @@ builder.Services.AddAuthentication(options =>
 // Register BlobService for Azure Blob Storage.
 builder.Services.AddSingleton<IBlobService, BlobService>();
 
+// Register Azure Form Recognizer
+builder.Services.AddSingleton(sp =>
+{
+    var endpoint = new Uri(builder.Configuration["AzureFormRecognizer:Endpoint"]);
+    var credential = new AzureKeyCredential(builder.Configuration["AzureFormRecognizer:ApiKey"]);
+    return new DocumentAnalysisClient(endpoint, credential);
+});
+
 var app = builder.Build();
 
 // Serve default files and static files, and use the defined CORS policy.
@@ -117,7 +127,7 @@ if (app.Environment.IsDevelopment())
 {
 
     // Automatically launch Vite frontend if present.
-    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");

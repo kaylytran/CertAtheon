@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250401170706_AddProfilePictureUrlToUser")]
-    partial class AddProfilePictureUrlToUser
+    [Migration("20250421172650_AddCertificateUrl")]
+    partial class AddCertificateUrl
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -121,6 +121,9 @@ namespace Backend.Migrations
 
                     b.Property<DateTime>("CertifiedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DocumentUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
