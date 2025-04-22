@@ -118,7 +118,10 @@ namespace Backend.Controllers
                             : "No Certificate",
                         ExpiryDate       = cert != null
                             ? cert.ValidTill.ToString("yyyy-MM-dd")
-                            : "No Certificate"
+                            : "No Certificate",
+                        DocumentUrl      = cert != null
+                            ? cert.DocumentUrl
+                            : null
                     };
                 })
                 .ToList();
