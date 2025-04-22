@@ -267,7 +267,7 @@ namespace Backend.Controllers
             // 7) return both the URL and the extracted text
             return Ok(new
             {
-                blobUrl,
+                documentUrl = blobUrl,
                 CertificateName = certName,
                 IssueDate       = issueDate,
                 ExpiryDate      = expiryDate
