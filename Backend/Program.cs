@@ -127,7 +127,7 @@ if (app.Environment.IsDevelopment())
 {
 
     // Automatically launch Vite frontend if present.
-    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "../Frontend");
+    var frontendPath = Path.Combine(app.Environment.ContentRootPath, "..CertAtheon/Frontend");
     if (Directory.Exists(frontendPath))
     {
         Console.WriteLine("\n> Starting Vite Dev Server...");
