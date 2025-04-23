@@ -20,7 +20,7 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+        policy => policy.WithOrigins("${import.meta.env.VITE_API_BASE_URL}")
 
                         .AllowAnyMethod()
                         .AllowAnyHeader()
