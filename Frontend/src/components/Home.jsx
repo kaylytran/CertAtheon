@@ -432,7 +432,6 @@ const Home = () => {
             const endpoints = [
                 `${url}/api/Certificates/add`,
                 `${url}/api/Certificates`,
-                `${url}/api/Certificates/create`
             ];
             
             let success = false;
