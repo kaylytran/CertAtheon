@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     outputs:
       artifact-path: ${{ steps.publish.outputs.artifact-path }}
     
@@ -21,19 +21,14 @@ jobs:
         with:
           dotnet-version: '8.x'
       
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Publish (includes build)
+      - name: Build
+        run: dotnet build --configuration Release
+      
+      - name: Publish
         id: publish
         run: |
           dotnet publish -c Release -o ./publish
-          zip -r app.zip ./publish
+          Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
           echo "artifact-path=./app.zip" >> $GITHUB_OUTPUT
       
       - name: Upload artifact
@@ -43,7 +38,7 @@ jobs:
           path: ./app.zip
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     
     steps:
