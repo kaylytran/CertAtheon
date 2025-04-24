@@ -44,19 +44,28 @@ namespace Backend.Controllers
             _configuration = configuration; 
         }
         
-        // GET: api/certificates?offset=0&limit=10
-        [HttpGet]
-        public async Task<IActionResult> GetCertificates(
-            [FromQuery] int offset = 0,
-            [FromQuery] int? limit = null)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("User ID not found in claims.");
-                return Unauthorized("User ID not found.");
-            }
+    // GET: api/certificates?offset=0&limit=10
+    [HttpGet]
+    public async Task<IActionResult> GetCertificates(
+        [FromQuery] int offset = 0,
+        [FromQuery] int? limit = null)
+    {
+        // start an Activity so that any downstream tracing systems can correlate logs
+        using var activity = new System.Diagnostics.Activity(nameof(GetCertificates))
+            .Start();
 
+        _logger.LogInformation("Entering {Method} for user. Offset={Offset}, Limit={Limit}", 
+            nameof(GetCertificates), offset, limit);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("User ID not found in claims.");
+            return Unauthorized("User ID not found.");
+        }
+
+        try
+        {
             // Base query: only this user's certificates, include catalog for Name
             var query = _context.Certificates
                 .Include(c => c.CertificateCatalog)
@@ -64,17 +73,24 @@ namespace Backend.Controllers
                 .OrderBy(c => c.Id)    // ensure deterministic paging
                 .AsQueryable();
 
-            // total before paging
+            _logger.LogDebug("Query built for user {UserId}. About to count total records.", userId);
             var totalCertificates = await query.CountAsync();
 
-            // apply paging
-            var paged = query.Skip(offset);
+            var pagedQuery = query.Skip(offset);
             if (limit.HasValue)
-                paged = paged.Take(limit.Value);
+            {
+                pagedQuery = pagedQuery.Take(limit.Value);
+                _logger.LogDebug("Applied pagination: Skip={Offset}, Take={Limit}", offset, limit.Value);
+            }
+            else
+            {
+                _logger.LogDebug("No limit supplied, returning all records after Skip={Offset}", offset);
+            }
 
-            var certificates = await paged.ToListAsync();
+            var certificates = await pagedQuery.ToListAsync();
+            _logger.LogInformation("Fetched {Count} certificates (out of {Total}) for user {UserId}.", 
+                certificates.Count, totalCertificates, userId);
 
-            // project results
             var items = certificates.Select(c => new 
             {
                 c.Id,
@@ -86,14 +102,31 @@ namespace Backend.Controllers
                 c.DocumentUrl
             });
 
+            activity?.SetTag("cert.count", certificates.Count);
+            activity?.SetTag("cert.total", totalCertificates);
+
             return Ok(new
             {
-                TotalCertificates = totalCertificates,
-                Offset = offset,
-                Limit = limit,
-                Records = items
+                TotalCertificates   = totalCertificates,
+                Offset              = offset,
+                Limit               = limit,
+                Records             = items
             });
         }
+        catch (Exception ex)
+        {
+            // log with full exception and correlation (activity) if any
+            _logger.LogError(ex, "Unhandled exception in {Method} for user {UserId}. Offset={Offset}, Limit={Limit}, TraceId={TraceId}", 
+                nameof(GetCertificates), userId, offset, limit, activity?.TraceId);
+            return StatusCode(500, "An error occurred retrieving certificates. Please try again later.");
+        }
+        finally
+        {
+            _logger.LogInformation("Exiting {Method} for user {UserId}", nameof(GetCertificates), userId);
+            activity?.Stop();
+        }
+    }
+
 
         
         // GET: api/certificates/{id}
