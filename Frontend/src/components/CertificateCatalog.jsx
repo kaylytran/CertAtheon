@@ -15,7 +15,7 @@ const CertificateCatalog = () => {
     const [filteredCatalogData, setFilteredCatalogData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+    const [profilePic, setProfilePic] = useState(null);
 
     // State for filters
     const [filterLevel, setFilterLevel] = useState("all");
@@ -365,7 +365,7 @@ const CertificateCatalog = () => {
     const userInfo = {
         firstName: localStorage.getItem("firstName") || "User",
         lastName: localStorage.getItem("lastName") || "",
-        profilePhoto: localStorage.getItem("profilePhoto") || "/api/placeholder/40/40",
+        profilePhoto: localStorage.getItem("profilePhoto"),
         userRole: localStorage.getItem("userRole") || "User",
     };
 

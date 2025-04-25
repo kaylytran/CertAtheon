@@ -265,7 +265,7 @@ const AdminPage = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">
                         <img
-                            src="/api/placeholder/40/40"
+                            // src="/api/placeholder/40/40"
                             alt="User Avatar"
                             className="rounded-full w-10 h-10 cursor-pointer"
                             onClick={() => navigate("/profile")}
