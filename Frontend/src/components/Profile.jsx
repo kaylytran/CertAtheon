@@ -172,7 +172,7 @@ const Profile = () => {
         </button>
         <div className="flex items-center gap-4 text-white">
           <img
-            src={profileData?.profilePictureUrl || "/api/placeholder/40/40"}
+            src={profileData?.profilePictureUrl || "/profile_placeholder.png"}
             alt="Avatar"
             className="rounded-full w-10 h-10 object-cover"
           />
@@ -194,9 +194,10 @@ const Profile = () => {
             <div className="flex items-center mb-6">
               <div className="relative">
                 <img
-                  src={profileData?.profilePictureUrl || "/api/placeholder/100/100"}
+                  src={profileData?.profilePictureUrl || "/profile_placeholder.png"}
                   alt="Profile"
                   className="rounded-full w-24 h-24 object-cover"
+                  onError={(e) => { e.target.src = "/profile_placeholder.png"; }}
                 />
                 <label
                   htmlFor="profilePhotoUpload"
