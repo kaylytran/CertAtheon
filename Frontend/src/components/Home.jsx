@@ -10,7 +10,7 @@ const Home = () => {
     const [currentCert, setCurrentCert] = useState(null);
     const [certificateCatalog, setCertificateCatalog] = useState([]);
     const [myCertifications, setMyCertifications] = useState([]);
-    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+    const [profilePic, setProfilePic] = useState("/profile_placeholder.png");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
