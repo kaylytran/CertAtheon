@@ -105,7 +105,7 @@ const Home = () => {
                 if (isMounted.current) {
                     // Process unique certifications
                     const uniqueCertifications = {};
-                    const certificationsData = response.data || [];
+                    const certificationsData = response.data.records || [];
                     
                     certificationsData.forEach(cert => {
                         const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
