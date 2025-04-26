@@ -380,14 +380,16 @@ const CertificateCatalog = () => {
                     >
                         Home
                     </button>
+                    {userInfo.userRole !== "Employee" && (
+                        <button
+                            className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
+                            onClick={navigateToDashboard}
+                        >
+                            Dashboard
+                        </button>
+                    )}
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
-                        onClick={navigateToDashboard}
-                    >
-                        Dashboard
-                    </button>
-                    <button
-                        className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
                     >
                         Certificate Catalogue
                     </button>
