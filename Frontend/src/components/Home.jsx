@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import dayjs from 'dayjs';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -611,7 +612,7 @@ const Home = () => {
 
                                                     {/* Certified Date */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {cert.certifiedDate || "N/A"}
+                                                        {cert.certifiedDate ? dayjs(cert.certifiedDate).format('MMMM D, YYYY') : "N/A"}
                                                     </td>
 
                                                     {/* Certificate Level */}
@@ -624,7 +625,7 @@ const Home = () => {
 
                                                     {/* Expiry Date */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {cert.validTill || "N/A"}
+                                                        {cert.validTill ? dayjs(cert.validTill).format('MMMM D, YYYY') : "N/A"}
                                                     </td>
 
                                                     {/* Actions */}
