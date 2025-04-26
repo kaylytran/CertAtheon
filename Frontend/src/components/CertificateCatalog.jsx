@@ -15,7 +15,7 @@ const CertificateCatalog = () => {
     const [filteredCatalogData, setFilteredCatalogData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+    const [profilePic, setProfilePic] = useState("/profile_placeholder.png");
 
     // State for filters
     const [filterLevel, setFilterLevel] = useState("all");
@@ -365,7 +365,7 @@ const CertificateCatalog = () => {
     const userInfo = {
         firstName: localStorage.getItem("firstName") || "User",
         lastName: localStorage.getItem("lastName") || "",
-        profilePhoto: localStorage.getItem("profilePhoto") || "/api/placeholder/40/40",
+        profilePhoto: localStorage.getItem("profilePhoto") || "/profile_placeholder.png",
         userRole: localStorage.getItem("userRole") || "User",
     };
 
@@ -380,14 +380,16 @@ const CertificateCatalog = () => {
                     >
                         Home
                     </button>
+                    {userInfo.userRole !== "Employee" && (
+                        <button
+                            className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
+                            onClick={navigateToDashboard}
+                        >
+                            Dashboard
+                        </button>
+                    )}
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
-                        onClick={navigateToDashboard}
-                    >
-                        Dashboard
-                    </button>
-                    <button
-                        className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
                     >
                         Certificate Catalogue
                     </button>

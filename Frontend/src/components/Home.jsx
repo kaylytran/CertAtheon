@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import dayjs from 'dayjs';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -9,7 +10,7 @@ const Home = () => {
     const [currentCert, setCurrentCert] = useState(null);
     const [certificateCatalog, setCertificateCatalog] = useState([]);
     const [myCertifications, setMyCertifications] = useState([]);
-    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+    const [profilePic, setProfilePic] = useState("/profile_placeholder.png");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
@@ -104,7 +105,7 @@ const Home = () => {
                 if (isMounted.current) {
                     // Process unique certifications
                     const uniqueCertifications = {};
-                    const certificationsData = response.data || [];
+                    const certificationsData = response.data.records || [];
                     
                     certificationsData.forEach(cert => {
                         const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
@@ -598,6 +599,10 @@ const Home = () => {
                                             <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                                                 Actions
                                             </th>
+
+                                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
+                                                Document
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -611,7 +616,7 @@ const Home = () => {
 
                                                     {/* Certified Date */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {cert.certifiedDate || "N/A"}
+                                                        {cert.certifiedDate ? dayjs(cert.certifiedDate).format('MMMM D, YYYY') : "N/A"}
                                                     </td>
 
                                                     {/* Certificate Level */}
@@ -624,7 +629,7 @@ const Home = () => {
 
                                                     {/* Expiry Date */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {cert.validTill || "N/A"}
+                                                        {cert.validTill ? dayjs(cert.validTill).format('MMMM D, YYYY') : "N/A"}
                                                     </td>
 
                                                     {/* Actions */}
@@ -651,6 +656,18 @@ const Home = () => {
                                                         >
                                                             Delete
                                                         </button>
+                                                    </td>
+
+                                                    {/* View Document Button */}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {cert.documentUrl ? (
+                                                        <button
+                                                        onClick={() => window.open(cert.documentUrl, '_blank')}
+                                                        className="text-blue-500 hover:underline"
+                                                        >
+                                                        View Document
+                                                        </button>
+                                                    ) : null}
                                                     </td>
                                                 </tr>
                                             ))
