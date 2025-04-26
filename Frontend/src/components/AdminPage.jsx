@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import dayjs from 'dayjs';
+
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -15,7 +17,7 @@ const AdminPage = () => {
     const [error, setError] = useState(null);
     const [totalEmployees, setTotalEmployees] = useState(0);
     const [employeesWithCertificate, setEmployeesWithCertificate] = useState(0);
-    const [profilePic, setProfilePic] = useState("/api/placeholder/40/40");
+    const [profilePic, setProfilePic] = useState("/profile_placeholder.png");
     const [overallAdoptionRate, setOverallAdoptionRate] = useState(0);
     const [year, setYear] = useState("2025"); // Default year is 2025
     const [showAddModal, setShowAddModal] = useState(false);
@@ -599,6 +601,7 @@ const AdminPage = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Certificate</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cert Issue Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cert Expiry Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Document</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -622,11 +625,22 @@ const AdminPage = () => {
                                                 {employee.certificateName || "No Certificate"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.certifiedDate || "No Certificate"}
+                                                {employee.certifiedDate ? dayjs(employee.certifiedDate).format('MMMM D, YYYY') : "No Certificate"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.expiryDate || "No Certificate"}
+                                                {employee.expiryDate ? dayjs(employee.expiryDate).format('MMMM D, YYYY') : "No Certificate"}
                                             </td>
+                                            {/* View Document Button */}
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {employee.documentUrl ? (
+                                                <button
+                                                onClick={() => window.open(employee.documentUrl, '_blank')}
+                                                className="text-blue-500 hover:underline"
+                                                >
+                                                View Document
+                                                </button>
+                                            ) : null}
+                                            </td>                                            
                                         </tr>
                                     ))
                                 ) : (
