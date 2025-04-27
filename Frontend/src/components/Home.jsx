@@ -14,13 +14,18 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
+        certificationId: null,
         certification: "",
         certifiedDate: "",
         validThrough: "",
-        level: ""
+        level: "",
+        documentUrl: null
     });
     const [uploadedFile, setUploadedFile] = useState(null); // Add a new state for the file upload
-    
+
+    // handle error message in adding/editing certifications
+    const [errorMessage, setErrorMessage] = useState("");
+
     // Add isMounted ref to prevent state updates after unmount
     const isMounted = useRef(true);
     
@@ -141,7 +146,7 @@ const Home = () => {
             const response = await axios.get(`${url}/api/CertificateCatalog`);
             
             if (isMounted.current) {
-                const data = response.data;
+                const data = response.data.records;
                 
                 // Process unique catalog entries
                 const uniqueCatalogEntries = {};
@@ -245,23 +250,31 @@ const Home = () => {
                 console.log("Upload Response:", response.data);
 
                 // Extract response data
-                const { documentUrl, certificateName, issueDate, expiryDate } = response.data;
+                const { documentUrl, certificateName, issueDate, expiryDate, certificateCatalogId } = response.data;
                 blogUrl = documentUrl; // Store the document URL for later use
                 console.log("Document URL:", blogUrl);
 
-                // Check if the certificateName exists in the Certificate Catalog
-                const matchedCert = certificateCatalog.find(
-                    (cert) => cert.certificateName === certificateName
-                );
+                // // Check if the certificateName exists in the Certificate Catalog
+                // const matchedCert = certificateCatalog.find(
+                //     (cert) => cert.certificateName === certificateName
+                // );
+
+                if (!certificateCatalogId) {
+                    setErrorMessage("Certificate not found in the catalog");
+                } else {
+                    setErrorMessage(""); // Clear error message if certificate is found
+                }
 
                 // Populate the modal fields with the response data
                 setFormData((prevFormData) => ({
                     ...prevFormData,
-                    certification: matchedCert ? certificateName : "", // Select if it matches, otherwise leave blank
+                    certificationId: certificateCatalogId ? certificateCatalogId : null, // Set the ID of the selected certificate
+                    certification: certificateName ? certificateName : "", // Select if it matches, otherwise leave blank
                     certifiedDate: issueDate ? dayjs(issueDate).format("YYYY-MM-DD") : "",
                     validThrough: expiryDate && expiryDate !== "Unknown"
                         ? dayjs(expiryDate).format("YYYY-MM-DD")
                         : "2099-12-31", // Default to 12/31/2099 if unknown
+                    documentUrl: documentUrl || null, // Set the document URL
                 }));
 
                 // Clear the file input field
@@ -278,22 +291,27 @@ const Home = () => {
     const handleAddNewSubmit = async (e) => {
         e.preventDefault();
 
-        // Find the selected certificate in the catalog
-        const selectedCert = certificateCatalog.find(
-            (cert) => cert.certificateName === formData.certification
-        );
+        // // Find the selected certificate in the catalog
+        // const selectedCert = certificateCatalog.find(
+        //     (cert) => cert.certificateName === formData.certification
+        // );
 
-        if (!selectedCert) {
-            alert("Please select a valid certificate.");
+        // if (!selectedCert) {
+        //     alert("Please select a valid certificate.");
+        //     return;
+        // }
+
+        if (!formData.certificationId) {
+            alert("No such certificate found in the catalog.");
             return;
         }
 
         // Prepare the payload for the POST request
         const payload = {
-            certificateCatalogId: selectedCert.id,
+            certificateCatalogId: formData.certificationId,
             certifiedDate: formData.certifiedDate,
             validTill: formData.validThrough,
-            documentUrl: blogUrl || "", // Use the documentUrl from the upload response
+            documentUrl: formData.documentUrl || null, // Use the documentUrl from the upload response
         };
 
         // Log the payload for debugging
@@ -319,13 +337,16 @@ const Home = () => {
                     certifiedDate: "",
                     validThrough: "",
                     level: "",
+                    documentUrl: null,
+                    certificationId: null,
                 });
                 fetchCertificates(); // Refresh the certifications list
             }
         } catch (err) {
             console.error("Error adding certificate:", err);
             if (isMounted.current) {
-                alert("Failed to add certificate: " + (err.response?.data?.message || err.message));
+                // alert("Failed to add certificate: " + (err.response?.data?.message || err.message));
+                setErrorMessage("Failed to add certificate: " + (err.response?.data?.message || err.message));
             }
         } finally {
             if (isMounted.current) {
@@ -397,10 +418,10 @@ const Home = () => {
                     });
 
                     // Log the response data for debugging
-                    console.log("Response Data:", response.data);
+                    console.log("Response Data:", response.data.records);
 
                     // Ensure response.data is an array
-                    const certificationsData = Array.isArray(response.data) ? response.data : [];
+                    const certificationsData = Array.isArray(response.data.records) ? response.data.records : [];
                     const uniqueCertifications = {};
 
                     certificationsData.forEach((cert) => {
@@ -461,8 +482,14 @@ const Home = () => {
         );
     };
 
-    const CertificationForm = ({ isEdit }) => (
+    const CertificationForm = ({ isEdit, errorMessage }) => (
         <div className="space-y-4">
+            {/* Error Message Display */}
+                {errorMessage && (
+                <div className="text-center text-red-600 text-sm font-medium bg-red-100 p-2 rounded-md">
+                    {errorMessage}
+                </div>
+            )}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate</label>
                 {isEdit ? (
@@ -514,7 +541,7 @@ const Home = () => {
                     required
                 />
             </div>
-            <div>
+            {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
                 <input
                     type="text"
@@ -523,7 +550,7 @@ const Home = () => {
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
                 />
-            </div>
+            </div> */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF of Certification</label>
                 <input
@@ -694,7 +721,7 @@ const Home = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {cert.documentUrl ? (
                                                             <a
-                                                                href={cert.blogUrl}
+                                                                href={cert.documentUrl}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="text-blue-500 hover:underline"
@@ -869,7 +896,11 @@ const Home = () => {
                 title="Add New Certificate"
                 onSubmit={handleAddNewSubmit}
             >
-                <CertificationForm isEdit={false} />
+                <CertificationForm
+                    isEdit={false} 
+                    errorMessage={errorMessage}
+                    setErrorMessage={setErrorMessage} // also pass the setter if needed
+                />
             </Modal>
 
             {/* Edit Certificate Modal */}
@@ -879,7 +910,11 @@ const Home = () => {
                 title="Edit Certificate"
                 onSubmit={handleEditSubmit}
             >
-                <CertificationForm isEdit={true} />
+                <CertificationForm
+                    isEdit={true} 
+                    errorMessage={errorMessage}
+                    setErrorMessage={setErrorMessage} // also pass the setter if needed
+                />
             </Modal>
         </div>
     );
