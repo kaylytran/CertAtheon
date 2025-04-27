@@ -63,12 +63,19 @@ const CertificateCatalog = () => {
         const fetchCatalogData = async () => {
           try {
             setLoading(true);
+            
+            // Get all certificates at once for client-side filtering
+            // You might want to add a reasonable limit if there could be thousands of records
             const response = await axios.get(`${url}/api/CertificateCatalog`, {
               headers: { Authorization: `Bearer ${token}` },
+              params: {
+                offset: 0,
+                limit: 1000 // Using a large limit to get all certificates
+              }
             });
             
             if (isMounted.current) {
-                const certificates = response.data;
+                const certificates = response.data.records;
                 
                 // Process unique certificates
                 const uniqueCertificates = {};
@@ -82,7 +89,6 @@ const CertificateCatalog = () => {
                 const uniqueCertificatesList = Object.values(uniqueCertificates);
                 
                 setCatalogData(uniqueCertificatesList);
-                setFilteredCatalogData(uniqueCertificatesList);
                 
                 // Extract unique levels and categories for filter dropdowns
                 const levels = [...new Set(uniqueCertificatesList.map(cert => cert.certificateLevel))];
@@ -134,7 +140,13 @@ const CertificateCatalog = () => {
         }
       
         fetchCatalogData();
-    }, [token, url]);
+    }, [token, url, currentPage, itemsPerPage, filterLevel, filterCategory]);
+    // Apply filters when filter values change
+    useEffect(() => {
+        if (isMounted.current) {
+            applyFilters();
+        }
+    }, [filterLevel, filterCategory, catalogData]);
     
     // Calculate pagination values whenever filtered data changes
     useEffect(() => {
@@ -148,13 +160,6 @@ const CertificateCatalog = () => {
             }
         }
     }, [filteredCatalogData, itemsPerPage, currentPage]);
-    
-    // Apply filters when filter values change
-    useEffect(() => {
-        if (isMounted.current) {
-            applyFilters();
-        }
-    }, [filterLevel, filterCategory, catalogData]);
     
     // Handle filter changes
     const handleLevelFilterChange = (e) => {
@@ -185,13 +190,20 @@ const CertificateCatalog = () => {
         setFilteredCatalogData(filtered);
     };
     
+    // Reset all filters
+    const resetFilters = () => {
+        setFilterLevel("all");
+        setFilterCategory("all");
+        setCurrentPage(1); // Reset to first page when filters are reset
+    };
+    
     // Get current items for pagination
     const getCurrentItems = () => {
         const indexOfLastItem = currentPage * itemsPerPage;
         const indexOfFirstItem = indexOfLastItem - itemsPerPage;
         return filteredCatalogData.slice(indexOfFirstItem, indexOfLastItem);
     };
-    
+
     // Handle page change
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -201,14 +213,6 @@ const CertificateCatalog = () => {
     const handleItemsPerPageChange = (e) => {
         const value = parseInt(e.target.value);
         setItemsPerPage(value);
-        setCurrentPage(1); // Reset to first page when changing items per page
-    };
-    
-    // Reset all filters
-    const resetFilters = () => {
-        setFilterLevel("all");
-        setFilterCategory("all");
-        setCurrentPage(1); // Reset to first page when filters are reset
     };
 
     // Handle input changes in the modal with validation
@@ -310,6 +314,15 @@ const CertificateCatalog = () => {
             if (isMounted.current) {
                 alert("Certificate added successfully!");
                 
+                // Close the modal and reset form
+                setShowModal(false);
+                setNewCertificate({
+                    certificateName: "",
+                    category: "",
+                    certificateLevel: "",
+                    description: "",
+                });
+                
                 // Update the catalog data with the new certificate
                 const updatedCatalog = [...catalogData, response.data];
                 
@@ -333,15 +346,6 @@ const CertificateCatalog = () => {
                 if (!availableCategories.includes(response.data.category)) {
                     setAvailableCategories([...availableCategories, response.data.category]);
                 }
-                
-                // Close the modal and reset form
-                setShowModal(false);
-                setNewCertificate({
-                    certificateName: "",
-                    category: "",
-                    certificateLevel: "",
-                    description: "",
-                });
                 
                 // Reset to first page to show the new certificate
                 setCurrentPage(1);
@@ -595,10 +599,10 @@ const CertificateCatalog = () => {
                                                 className="mr-4 px-2 py-1 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                                             >
                                                 <option value={5}>5</option>
-                                        <option value={10}>10</option>
-                                        <option value={15}>15</option>
-                                        <option value={20}>20</option>
-                                        <option value={25}>25</option>
+                                                <option value={10}>10</option>
+                                                <option value={15}>15</option>
+                                                <option value={20}>20</option>
+                                                <option value={25}>25</option>
                                             </select>
                                             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                                 <button
