@@ -1,10 +1,11 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.Schemas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Threading.Tasks;
-using Backend.Schemas;
 
 namespace Backend.Controllers
 {
@@ -19,14 +20,32 @@ namespace Backend.Controllers
             _context = context;
         }
 
-        // GET: api/CertificateCatalog
+        // GET: api/CertificateCatalog?offset=0&limit=20
         // Open to all users.
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetCatalogItems()
+        public async Task<IActionResult> GetCatalogItems(
+            [FromQuery] int offset = 0,
+            [FromQuery] int? limit = null)
         {
-            var items = await _context.CertificateCatalogs.ToListAsync();
-            return Ok(items);
+            var query = _context.CertificateCatalogs.AsQueryable();
+
+            var totalItems = await query.CountAsync();
+
+            if (offset > 0)
+                query = query.Skip(offset);
+            if (limit.HasValue)
+                query = query.Take(limit.Value);
+
+            var items = await query.ToListAsync();
+
+            return Ok(new
+            {
+                TotalItems = totalItems,
+                Offset = offset,
+                Limit = limit,
+                Records = items
+            });
         }
 
         // GET: api/CertificateCatalog/{id}
@@ -41,25 +60,40 @@ namespace Backend.Controllers
             return Ok(item);
         }
 
-        // GET: api/CertificateCatalog/search?q=somePhrase
+        // GET: api/CertificateCatalog/search?q=somePhrase&offset=0&limit=20
         // Open to all users.
         [HttpGet("search")]
         [Authorize]
-        public async Task<IActionResult> SearchCertificateCatalog([FromQuery] string q)
+        public async Task<IActionResult> SearchCertificateCatalog(
+            [FromQuery] string q,
+            [FromQuery] int offset = 0,
+            [FromQuery] int? limit = null)
         {
             if (string.IsNullOrWhiteSpace(q))
-            {
                 return BadRequest("Query parameter 'q' is required.");
-            }
 
-            var results = await _context.CertificateCatalogs
-                .Where(c => EF.Functions.Like(c.CertificateName, $"%{q}%"))
-                .ToListAsync();
+            var query = _context.CertificateCatalogs
+                                .Where(c => EF.Functions.Like(c.CertificateName, $"%{q}%"));
 
-            return Ok(results);
+            var totalItems = await query.CountAsync();
+
+            if (offset > 0)
+                query = query.Skip(offset);
+            if (limit.HasValue)
+                query = query.Take(limit.Value);
+
+            var results = await query.ToListAsync();
+
+            return Ok(new
+            {
+                TotalItems = totalItems,
+                Offset = offset,
+                Limit = limit,
+                Records = results
+            });
         }
 
-        // POST: api/CertificateCatalog
+        // POST: api/CertificateCatalog/add
         // Restricted to users with the Manager role.
         [HttpPost("add")]
         [Authorize(Roles = "Manager")]
@@ -68,7 +102,6 @@ namespace Backend.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            
             var newCertificateCatalog = new CertificateCatalog
             {
                 CertificateName = request.CertificateName,
@@ -79,7 +112,9 @@ namespace Backend.Controllers
 
             _context.CertificateCatalogs.Add(newCertificateCatalog);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCatalogItem), new { id = newCertificateCatalog.Id }, newCertificateCatalog);
+            return CreatedAtAction(nameof(GetCatalogItem),
+                                   new { id = newCertificateCatalog.Id },
+                                   newCertificateCatalog);
         }
 
         // PUT: api/CertificateCatalog/{id}
@@ -95,15 +130,14 @@ namespace Backend.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!CatalogItemExists(id))
                     return NotFound();
-                else
-                    throw;
+                throw;
             }
-            return NoContent();
         }
 
         // DELETE: api/CertificateCatalog/{id}
@@ -122,8 +156,6 @@ namespace Backend.Controllers
         }
 
         private bool CatalogItemExists(int id)
-        {
-            return _context.CertificateCatalogs.Any(e => e.Id == id);
-        }
+            => _context.CertificateCatalogs.Any(e => e.Id == id);
     }
 }
