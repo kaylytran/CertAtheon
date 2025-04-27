@@ -213,7 +213,7 @@ namespace Backend.Controllers
 
         // POST: api/certificates/upload
         [HttpPost("upload")]
-        [RequestSizeLimit(10_000_000)] // 10 MB max
+        [RequestSizeLimit(50_000_000)] // 50 MB max
         public async Task<IActionResult> ExtractCertificateText(IFormFile file)
         {
             // 1) validation
@@ -284,9 +284,13 @@ namespace Backend.Controllers
                               .ToList();
 
             // heuristics to pick out the three fields
-            // 1) CertificateName: look for the line containing "Microsoft Certified"
-            var certName = lines.FirstOrDefault(l => l.StartsWith("Microsoft Certified", StringComparison.OrdinalIgnoreCase))
-                        ?? "Unknown Certificate";
+            // extract the name line
+            var rawCertLine = lines
+                .FirstOrDefault(l => l.StartsWith("Microsoft Certified", StringComparison.OrdinalIgnoreCase));
+            var certName = (rawCertLine ?? "Unknown Certificate")
+                .Trim()
+                .Trim('.')
+                .Trim();
 
             // 2) IssueDate: look for "Earned on:" or similar
             var issueLine = lines.FirstOrDefault(l => l.StartsWith("Earned on", StringComparison.OrdinalIgnoreCase));
@@ -297,15 +301,27 @@ namespace Backend.Controllers
             var expiryLine = lines.FirstOrDefault(l =>
                 l.StartsWith("Expires on", StringComparison.OrdinalIgnoreCase) ||
                 l.StartsWith("Expired on",  StringComparison.OrdinalIgnoreCase));
-            var expiryDate = expiryLine?.Split(':', 2)[1].Trim() ?? "Unknown";                        
+            var expiryDate = expiryLine?.Split(':', 2)[1].Trim() ?? "Unknown";     
 
-            // 7) return both the URL and the extracted text
+            // now look up the catalog ID by exact CI match
+            var catalogs = await _context.CertificateCatalogs
+                .Select(c => new { c.Id, c.CertificateName })
+                .ToListAsync();
+
+            var match = catalogs.FirstOrDefault(c =>
+                string.Equals(c.CertificateName, certName, StringComparison.OrdinalIgnoreCase)
+            );
+
+            int? catalogId = match?.Id;
+                   
+            // finally return everything
             return Ok(new
             {
-                documentUrl = blobUrl,
-                CertificateName = certName,
-                IssueDate       = issueDate,
-                ExpiryDate      = expiryDate
+                documentUrl          = blobUrl,
+                CertificateName      = certName,
+                IssueDate            = issueDate,
+                ExpiryDate           = expiryDate,
+                CertificateCatalogId = catalogId
             });
         }
         
