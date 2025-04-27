@@ -21,30 +21,30 @@ namespace Backend.Controllers
         }
 
         // GET: api/CertificateCatalog?offset=0&limit=20
-        // Open to all users.
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetCatalogItems(
             [FromQuery] int offset = 0,
             [FromQuery] int? limit = null)
         {
-            var query = _context.CertificateCatalogs.AsQueryable();
+            // start with ordered query
+            var query = _context.CertificateCatalogs
+                                .OrderByDescending(c => c.Id)
+                                .AsQueryable();
 
             var totalItems = await query.CountAsync();
 
-            if (offset > 0)
-                query = query.Skip(offset);
-            if (limit.HasValue)
-                query = query.Take(limit.Value);
+            if (offset > 0) query = query.Skip(offset);
+            if (limit.HasValue) query = query.Take(limit.Value);
 
             var items = await query.ToListAsync();
 
             return Ok(new
             {
                 TotalItems = totalItems,
-                Offset = offset,
-                Limit = limit,
-                Records = items
+                Offset     = offset,
+                Limit      = limit,
+                Records    = items
             });
         }
 
@@ -73,7 +73,9 @@ namespace Backend.Controllers
                 return BadRequest("Query parameter 'q' is required.");
 
             var query = _context.CertificateCatalogs
-                                .Where(c => EF.Functions.Like(c.CertificateName, $"%{q}%"));
+                                .Where(c => EF.Functions.Like(c.CertificateName, $"%{q}%"))
+                                .OrderByDescending(c => c.Id)
+                                .AsQueryable();
 
             var totalItems = await query.CountAsync();
 
