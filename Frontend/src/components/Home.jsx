@@ -19,6 +19,7 @@ const Home = () => {
         validThrough: "",
         level: ""
     });
+    const [uploadedFile, setUploadedFile] = useState(null); // Add a new state for the file upload
     
     // Add isMounted ref to prevent state updates after unmount
     const isMounted = useRef(true);
@@ -31,6 +32,8 @@ const Home = () => {
     const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem('token');
 
+    //BlogURL
+    let blogUrl;
     // Mock user info from localStorage
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',
@@ -93,99 +96,102 @@ const Home = () => {
         setCurrentPage(1); // Reset to first page when changing items per page
     };
 
-    // Fetch user's certifications on page load
-    useEffect(() => {
-        const fetchCertificates = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get(`${url}/api/Certificates`, {
-                    headers: { Authorization: `Bearer ${token}` }
+    const fetchCertificates = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${url}/api/Certificates`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (isMounted.current) {
+                // Process unique certifications
+                const uniqueCertifications = {};
+                const certificationsData = response.data.records || [];
+
+                certificationsData.forEach((cert) => {
+                    const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
+                    if (!uniqueCertifications[key]) {
+                        uniqueCertifications[key] = cert;
+                    }
                 });
+
+                const uniqueCertificationsList = Object.values(uniqueCertifications);
+                setMyCertifications(uniqueCertificationsList);
+
+                console.log(
+                    "Certifications loaded:",
+                    uniqueCertificationsList.length,
+                    "unique certifications"
+                );
+            }
+        } catch (err) {
+            console.error("Error fetching certifications:", err);
+            if (isMounted.current) {
+                setError("Failed to load your certifications. Please try again later.");
+            }
+        } finally {
+            if (isMounted.current) {
+                setLoading(false);
+            }
+        }
+    };
+
+    const fetchCertificateCatalog = async () => {
+        try {
+            const response = await axios.get(`${url}/api/CertificateCatalog`);
+            
+            if (isMounted.current) {
+                const data = response.data;
                 
-                if (isMounted.current) {
-                    // Process unique certifications
-                    const uniqueCertifications = {};
-                    const certificationsData = response.data.records || [];
-                    
-                    certificationsData.forEach(cert => {
-                        const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
-                        if (!uniqueCertifications[key]) {
-                            uniqueCertifications[key] = cert;
+                // Process unique catalog entries
+                const uniqueCatalogEntries = {};
+                if (Array.isArray(data)) {
+                    data.forEach(cert => {
+                        const key = cert.id || cert.certificateName;
+                        if (!uniqueCatalogEntries[key]) {
+                            uniqueCatalogEntries[key] = cert;
                         }
                     });
                     
-                    const uniqueCertificationsList = Object.values(uniqueCertifications);
-                    setMyCertifications(uniqueCertificationsList);
+                    const uniqueCatalogList = Object.values(uniqueCatalogEntries);
+                    setCertificateCatalog(uniqueCatalogList);
                     
-                    console.log("Certifications loaded:", uniqueCertificationsList.length, "unique certifications");
-                }
-            } catch (err) {
-                console.error("Error fetching certifications:", err);
-                if (isMounted.current) {
-                    setError("Failed to load your certifications. Please try again later.");
-                }
-            } finally {
-                if (isMounted.current) {
-                    setLoading(false);
+                    console.log("Certificate Catalog loaded:", uniqueCatalogList.length, "unique entries");
+                } else {
+                    console.error("Unexpected API response structure:", data);
+                    setCertificateCatalog([]);
                 }
             }
-        };
+        } catch (err) {
+            console.error("Error fetching certificate catalog:", err);
+            if (isMounted.current) {
+                setError("Failed to load certificate catalog. Some features may be limited.");
+            }
+        }
+    };
 
-        const fetchCertificateCatalog = async () => {
-            try {
-                const response = await axios.get(`${url}/api/CertificateCatalog`);
-                
-                if (isMounted.current) {
-                    const data = response.data;
-                    
-                    // Process unique catalog entries
-                    const uniqueCatalogEntries = {};
-                    if (Array.isArray(data)) {
-                        data.forEach(cert => {
-                            const key = cert.id || cert.certificateName;
-                            if (!uniqueCatalogEntries[key]) {
-                                uniqueCatalogEntries[key] = cert;
-                            }
-                        });
-                        
-                        const uniqueCatalogList = Object.values(uniqueCatalogEntries);
-                        setCertificateCatalog(uniqueCatalogList);
-                        
-                        console.log("Certificate Catalog loaded:", uniqueCatalogList.length, "unique entries");
-                    } else {
-                        console.error("Unexpected API response structure:", data);
-                        setCertificateCatalog([]);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching certificate catalog:", err);
-                if (isMounted.current) {
-                    setError("Failed to load certificate catalog. Some features may be limited.");
+    const fetchProfilePicture = async () => {
+        try {
+            const response = await axios.get(`${url}/api/Profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (isMounted.current) {
+                const imageUrl = response.data?.profilePictureUrl;
+                if (imageUrl) {
+                    const fullUrl = imageUrl.startsWith("http")
+                        ? imageUrl
+                        : `${url}/${imageUrl.replace(/^\/+/, "")}`;
+                    setProfilePic(fullUrl);
+                    localStorage.setItem("profilePictureUrl", fullUrl);
                 }
             }
-        };
+        } catch (err) {
+            console.error("Error fetching profile picture:", err);
+        }
+    };
 
-        const fetchProfilePicture = async () => {
-            try {
-                const response = await axios.get(`${url}/api/Profile`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (isMounted.current) {
-                    const imageUrl = response.data?.profilePictureUrl;
-                    if (imageUrl) {
-                        const fullUrl = imageUrl.startsWith("http")
-                            ? imageUrl
-                            : `${url}/${imageUrl.replace(/^\/+/, "")}`;
-                        setProfilePic(fullUrl);
-                        localStorage.setItem("profilePictureUrl", fullUrl);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching profile picture:", err);
-            }
-        };
-
+    useEffect(() => {
         const cachedPic = localStorage.getItem("profilePictureUrl");
         if (cachedPic) {
             setProfilePic(cachedPic);
@@ -218,6 +224,57 @@ const Home = () => {
         }
     };
 
+    const handleFileChange = async (e) => {
+        const fileInput = e.target; // Reference to the file input element
+        const file = fileInput.files[0];
+
+        if (file && file.type === "application/pdf") {
+            // Create FormData to send the file
+            const formDataPayload = new FormData();
+            formDataPayload.append("file", file);
+
+            try {
+                // Send the file to the upload endpoint
+                const response = await axios.post(`${url}/api/Certificates/upload`, formDataPayload, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                // Log the response for debugging
+                console.log("Upload Response:", response.data);
+
+                // Extract response data
+                const { documentUrl, certificateName, issueDate, expiryDate } = response.data;
+                blogUrl = documentUrl; // Store the document URL for later use
+                console.log("Document URL:", blogUrl);
+
+                // Check if the certificateName exists in the Certificate Catalog
+                const matchedCert = certificateCatalog.find(
+                    (cert) => cert.certificateName === certificateName
+                );
+
+                // Populate the modal fields with the response data
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    certification: matchedCert ? certificateName : "", // Select if it matches, otherwise leave blank
+                    certifiedDate: issueDate ? dayjs(issueDate).format("YYYY-MM-DD") : "",
+                    validThrough: expiryDate && expiryDate !== "Unknown"
+                        ? dayjs(expiryDate).format("YYYY-MM-DD")
+                        : "2099-12-31", // Default to 12/31/2099 if unknown
+                }));
+
+                // Clear the file input field
+                fileInput.value = ""; // Reset the file input field
+            } catch (err) {
+                console.error("Error uploading file:", err);
+                alert("Failed to upload the file. Please try again.");
+            }
+        } else {
+            alert("Please upload a valid PDF file.");
+        }
+    };
+
     const handleAddNewSubmit = async (e) => {
         e.preventDefault();
 
@@ -236,19 +293,26 @@ const Home = () => {
             certificateCatalogId: selectedCert.id,
             certifiedDate: formData.certifiedDate,
             validTill: formData.validThrough,
+            documentUrl: blogUrl || "", // Use the documentUrl from the upload response
         };
+
+        // Log the payload for debugging
+        console.log("Payload:", payload);
 
         try {
             setLoading(true);
             // Send the POST request
             await axios.post(`${url}/api/Certificates/add`, payload, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json", // Ensure JSON content type
+                },
             });
 
             if (isMounted.current) {
                 alert("Certificate added successfully!");
                 setShowAddModal(false);
-    
+
                 // Reset the form data
                 setFormData({
                     certification: "",
@@ -256,27 +320,7 @@ const Home = () => {
                     validThrough: "",
                     level: "",
                 });
-    
-                // Refresh the certifications list
-                const response = await axios.get(`${url}/api/Certificates`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                
-                // Process unique certifications after adding new one
-                const uniqueCertifications = {};
-                const certificationsData = response.data || [];
-                
-                certificationsData.forEach(cert => {
-                    const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
-                    if (!uniqueCertifications[key]) {
-                        uniqueCertifications[key] = cert;
-                    }
-                });
-                
-                const uniqueCertificationsList = Object.values(uniqueCertifications);
-                setMyCertifications(uniqueCertificationsList);
-                
-                setCurrentPage(1); // Reset to first page after adding
+                fetchCertificates(); // Refresh the certifications list
             }
         } catch (err) {
             console.error("Error adding certificate:", err);
@@ -302,7 +346,7 @@ const Home = () => {
 
         try {
             setLoading(true);
-            
+
             // Send the PUT request
             await axios.put(`${url}/api/Certificates/${currentCert.id}`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -312,25 +356,15 @@ const Home = () => {
                 alert("Certificate updated successfully!");
                 setShowEditModal(false);
                 setCurrentCert(null);
-    
-                // Refresh the certifications list
-                const response = await axios.get(`${url}/api/Certificates`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                
-                // Process unique certifications after update
-                const uniqueCertifications = {};
-                const certificationsData = response.data || [];
-                
-                certificationsData.forEach(cert => {
-                    const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
-                    if (!uniqueCertifications[key]) {
-                        uniqueCertifications[key] = cert;
-                    }
-                });
-                
-                const uniqueCertificationsList = Object.values(uniqueCertifications);
-                setMyCertifications(uniqueCertificationsList);
+
+                // Update the specific certification in the state
+                setMyCertifications((prevCertifications) =>
+                    prevCertifications.map((cert) =>
+                        cert.id === currentCert.id
+                            ? { ...cert, ...payload } // Update the edited certification
+                            : cert
+                    )
+                );
             }
         } catch (err) {
             console.error("Error updating certificate:", err);
@@ -348,33 +382,37 @@ const Home = () => {
         if (window.confirm("Are you sure you want to delete this certification?")) {
             try {
                 setLoading(true);
-                
+
+                // Send the DELETE request
                 await axios.delete(`${url}/api/Certificates/${certId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
                 if (isMounted.current) {
                     alert("Certification deleted successfully!");
-    
+
                     // Refresh the certifications list
                     const response = await axios.get(`${url}/api/Certificates`, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
-                    
-                    // Process unique certifications after deletion
+
+                    // Log the response data for debugging
+                    console.log("Response Data:", response.data);
+
+                    // Ensure response.data is an array
+                    const certificationsData = Array.isArray(response.data) ? response.data : [];
                     const uniqueCertifications = {};
-                    const certificationsData = response.data || [];
-                    
-                    certificationsData.forEach(cert => {
+
+                    certificationsData.forEach((cert) => {
                         const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
                         if (!uniqueCertifications[key]) {
                             uniqueCertifications[key] = cert;
                         }
                     });
-                    
+
                     const uniqueCertificationsList = Object.values(uniqueCertifications);
                     setMyCertifications(uniqueCertificationsList);
-                    
+
                     // If we're on a page that no longer exists, go to the last page
                     const newTotalPages = Math.ceil(uniqueCertificationsList.length / itemsPerPage);
                     if (currentPage > newTotalPages && newTotalPages > 0) {
@@ -441,21 +479,7 @@ const Home = () => {
                     <select
                         name="certification"
                         value={formData.certification}
-                        onChange={(e) => {
-                            const selectedCertName = e.target.value;
-
-                            // Find the selected certificate and update the level
-                            const selectedCert = certificateCatalog.find(
-                                (cert) => cert.certificateName === selectedCertName
-                            );
-
-                            setFormData({
-                                ...formData,
-                                certification: selectedCertName,
-                                level: selectedCert ? selectedCert.certificateLevel : "",
-                                certificateCatalogId: selectedCert ? selectedCert.id : null, // Store the certificate ID
-                            });
-                        }}
+                        onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md"
                         required
                     >
@@ -498,6 +522,15 @@ const Home = () => {
                     value={formData.level}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF of Certification</label>
+                <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleFileChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
             </div>
         </div>
@@ -636,15 +669,14 @@ const Home = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <button
                                                             onClick={() => {
-                                                                // Set the current certificate and populate the form data for editing
                                                                 setCurrentCert(cert);
                                                                 setFormData({
-                                                                    certification: cert.certificateName, // Use certificateName directly
+                                                                    certification: cert.certificateName,
                                                                     certifiedDate: cert.certifiedDate,
                                                                     validThrough: cert.validTill,
                                                                     level: cert.certificateLevel,
                                                                 });
-                                                                setShowEditModal(true); // Open the edit modal
+                                                                setShowEditModal(true);
                                                             }}
                                                             className="text-indigo-600 hover:text-indigo-900 mr-4"
                                                         >
@@ -658,22 +690,26 @@ const Home = () => {
                                                         </button>
                                                     </td>
 
-                                                    {/* View Document Button */}
+                                                    {/* Document Link */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {cert.documentUrl ? (
-                                                        <button
-                                                        onClick={() => window.open(cert.documentUrl, '_blank')}
-                                                        className="text-blue-500 hover:underline"
-                                                        >
-                                                        View Document
-                                                        </button>
-                                                    ) : null}
+                                                        {cert.documentUrl ? (
+                                                            <a
+                                                                href={cert.blogUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-500 hover:underline"
+                                                            >
+                                                                Certificate
+                                                            </a>
+                                                        ) : (
+                                                            "No Document"
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
                                                     No certifications found.
                                                 </td>
                                             </tr>

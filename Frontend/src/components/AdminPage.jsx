@@ -21,6 +21,10 @@ const AdminPage = () => {
     const [overallAdoptionRate, setOverallAdoptionRate] = useState(0);
     const [year, setYear] = useState("2025"); // Default year is 2025
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const [showCertFeedModal, setShowCertFeedModal] = useState(false);
+    const [certFeedFile, setCertFeedFile] = useState(null);
     
     // Track if component is mounted to prevent state updates after unmount
     const isMounted = useRef(true);
@@ -381,6 +385,17 @@ const AdminPage = () => {
         }
     };
 
+    // Handle file upload
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        setImportFile(file);
+    };
+
+    const handleCertFeedFileUpload = (e) => {
+        const file = e.target.files[0];
+        setCertFeedFile(file);
+    };
+
     // JSX
     return (
         <div className="min-h-screen w-full bg-gray-100">
@@ -491,6 +506,15 @@ const AdminPage = () => {
                             Add Employee
                         </button>
                         <button
+                            onClick={() => {
+                                console.log("Opening Import Modal");
+                                setShowImportModal(true);
+                            }}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        >
+                            Import Employee CSV
+                        </button>
+                        <button
                             onClick={async () => {
                                 try {
                                     const response = await axios.get(`${url}/api/Dashboard/csv`, {
@@ -513,6 +537,15 @@ const AdminPage = () => {
                             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                         >
                             Excel
+                        </button>
+                        <button
+                            onClick={() => {
+                                console.log("Opening Cert Feed Modal");
+                                setShowCertFeedModal(true);
+                            }}
+                            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                        >
+                            Cert Feed
                         </button>
                     </div>
                 </div>
@@ -583,6 +616,124 @@ const AdminPage = () => {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Import Employee Modal */}
+                {showImportModal && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                            <h2 className="text-xl font-semibold mb-4">Import Employee CSV</h2>
+                            <p className="mb-4 text-sm text-gray-700">Insert a CSV or Excel file to import employees.</p>
+                            <input
+                                type="file"
+                                accept=".csv, .xlsx"
+                                onChange={handleFileUpload}
+                                className="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowImportModal(false)}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (importFile) {
+                                            try {
+                                                const formData = new FormData();
+                                                formData.append("file", importFile);
+
+                                                // Send the file to the API
+                                                const response = await axios.post(`${url}/api/Dashboard/upload-employee-feed`, formData, {
+                                                    headers: {
+                                                        Authorization: `Bearer ${token}`,
+                                                        "Content-Type": "multipart/form-data",
+                                                    },
+                                                });
+
+                                                alert("File uploaded successfully!");
+                                                console.log("Upload Response:", response.data);
+
+                                                // Close the modal
+                                                setShowImportModal(false);
+                                                setImportFile(null); // Clear the file input
+                                            } catch (err) {
+                                                console.error("Error uploading file:", err);
+                                                alert("Failed to upload the file. Please try again.");
+                                            }
+                                        } else {
+                                            alert("Please select a file to upload.");
+                                        }
+                                    }}
+                                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                >
+                                    Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Cert Feed Modal */}
+                {showCertFeedModal && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                            <h2 className="text-xl font-semibold mb-4">Upload Certificate Feed</h2>
+                            <p className="mb-4 text-sm text-gray-700">Insert a CSV or Excel file to upload certificate feed.</p>
+                            <input
+                                type="file"
+                                accept=".csv, .xlsx"
+                                onChange={handleCertFeedFileUpload}
+                                className="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCertFeedModal(false)}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (certFeedFile) {
+                                            try {
+                                                const formData = new FormData();
+                                                formData.append("file", certFeedFile);
+
+                                                // Send the file to the API
+                                                const response = await axios.post(`${url}/api/Dashboard/upload-certificate-feed`, formData, {
+                                                    headers: {
+                                                        Authorization: `Bearer ${token}`,
+                                                        "Content-Type": "multipart/form-data",
+                                                    },
+                                                });
+
+                                                alert("Certificate feed uploaded successfully!");
+                                                console.log("Upload Response:", response.data);
+
+                                                // Close the modal
+                                                setShowCertFeedModal(false);
+                                                setCertFeedFile(null); // Clear the file input
+                                            } catch (err) {
+                                                console.error("Error uploading certificate feed:", err);
+                                                alert("Failed to upload the certificate feed. Please try again.");
+                                            }
+                                        } else {
+                                            alert("Please select a file to upload.");
+                                        }
+                                    }}
+                                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                                >
+                                    Upload
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
