@@ -179,7 +179,8 @@ namespace Backend.Controllers
                 CertificateCatalogId = request.CertificateCatalogId,
                 CertifiedDate = request.CertifiedDate,
                 ValidTill = request.ValidTill,
-                UserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                DocumentUrl = request.DocumentUrl
             };
 
             _context.Certificates.Add(certificate);
