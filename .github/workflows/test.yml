@@ -28,8 +28,20 @@ jobs:
       - name: Build backend
         run: dotnet build CertAtheon.sln --configuration Release --no-restore
 
-      - name: Run backend tests
-        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity normal
+      - name: Run backend tests with code coverage
+        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity detailed --collect:"XPlat Code Coverage" --logger "console;verbosity=detailed"
+
+      - name: Upload backend test results (.trx files)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: '**/TestResults/*.trx'
+
+      - name: Upload backend code coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-code-coverage
+          path: '**/TestResults/**/coverage.cobertura.xml'
 
       - name: Publish backend
         run: dotnet publish Backend/Backend.csproj -c Release -o ${{ github.workspace }}/publish
@@ -63,4 +75,10 @@ jobs:
 
       - name: Run frontend tests
         working-directory: Frontend
-        run: npm run test 
+        run: npm run test
+
+      - name: Upload frontend test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: Frontend/reports/jest-junit.xml
