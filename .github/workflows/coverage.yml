@@ -1,4 +1,4 @@
-name: Upload Coverage Report to Barecheck
+name: Upload Coverage Report to Codecov
 
 on:
   pull_request:
@@ -28,8 +28,8 @@ jobs:
       run: |
         dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults --no-build
 
-    - name: Upload Coverage to Barecheck
-      uses: barecheck/github-action@v1
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v4
       with:
-        token: ${{ secrets.BARECHECK_TOKEN }}
-        coverage-file: ./TestResults/**/coverage.cobertura.xml
+        files: ./TestResults/**/coverage.cobertura.xml
+        token: ${{ secrets.CODECOV_TOKEN }} # Optional if your repo is public
