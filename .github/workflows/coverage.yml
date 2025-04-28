@@ -1,20 +1,18 @@
-name: SonarCloud
+name: Code Coverage
 
 on:
   push:
-    branches:
-      - main
-      - development
+    branches: [ "main", "development" ]
   pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - main
-      - development
+    branches: [ "main", "development" ]
+  workflow_dispatch:
 
 jobs:
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
+  backend-coverage:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -23,93 +21,76 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x' # Adjust if using .NET 8 or 9 Preview
+          dotnet-version: '8.x'
+
+      - name: Clean previous coverage
+        run: |
+          if (Test-Path "TestResults") {
+            Remove-Item -Path "TestResults" -Recurse -Force
+          }
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test CertAtheon.sln \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults \
+            --logger "trx;LogFileName=test-results.trx" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: TestResults/**/coverage.cobertura.xml
+
+      - name: Publish coverage to PR
+        uses: codecov/codecov-action@v4
+        with:
+          file: TestResults/**/coverage.cobertura.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+  frontend-coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
 
-      - name: Install Backend dependencies
-        run: dotnet restore
-
-      - name: Install Frontend dependencies
+      - name: Install dependencies
         working-directory: Frontend
-        run: npm install
+        run: npm ci
 
-      - name: Install dotnet-sonarscanner
-        run: dotnet tool install --global dotnet-sonarscanner
-
-      - name: Begin SonarCloud analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet sonarscanner begin \
-            /k:"${{ secrets.YOUR_PROJECT_KEY }}" \
-            /o:"${{ secrets.YOUR_ORGANIZATION }}" \
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
-            /d:sonar.javascript.lcov.reportPaths="Frontend/coverage/lcov.info" \
-            /d:sonar.sources="Backend,Frontend/src/components" \
-            /d:sonar.exclusions="**/node_modules/**,**/*.test.jsx,**/*.spec.jsx"
-
-      - name: Build Backend
-        run: dotnet build --no-restore
-
-      - name: Run Backend Tests and Collect Coverage
-        run: |
-          dotnet test --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=backend-tests.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-
-      - name: Run Frontend Tests and Generate Coverage
+      - name: Run tests with coverage
         working-directory: Frontend
-        run: npm run coverage
+        run: |
+          npm run test:coverage
+          # If you don't have a coverage script, use:
+          # npm test -- --coverage --coverageReporters=text-lcov --coverageDirectory=coverage
 
-      - name: Upload Backend Test Results
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
+        working-directory: Frontend
         with:
-          name: backend-test-results
-          path: '**/TestResults/backend-tests.trx'
+          name: frontend-coverage
+          path: coverage/lcov.info
 
-      - name: Upload Frontend Test Results
-        uses: actions/upload-artifact@v4
+      - name: Publish coverage to PR
+        uses: codecov/codecov-action@v4
         with:
-          name: frontend-test-results
-          path: Frontend/junit.xml
-
-      - name: Upload Backend Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage-report
-          path: '**/TestResults/**/coverage.opencover.xml'
-
-      - name: Upload Frontend Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage-report
-          path: Frontend/coverage/lcov.info
-
-      # - name: Display Frontend Coverage Summary
-      #   uses: irongut/CodeCoverageSummary@v1.3.0
-      #   with:
-      #     filename: Frontend/coverage/lcov.info
-      #     badge: true
-      #     fail_below_min: true
-      #     format: markdown
-      #     output: both
-      #     thresholds: '{"line":80}'
-        
-
-      # - name: Publish Test Results to GitHub UI
-      #   uses: dorny/test-reporter@v1
-      #   if: always()
-      #   with:
-      #     name: All Test Results
-      #     path: |
-      #       **/TestResults/*.trx
-      #       Frontend/junit.xml
-      #     reporter: java-junit
-
-      - name: End SonarCloud analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          file: Frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false
