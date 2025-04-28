@@ -41,12 +41,6 @@ jobs:
             exit 1
           }
 
-      - name: Clean previous test results
-        run: |
-          if (Test-Path "TestResults") {
-            Remove-Item -Path "TestResults" -Recurse -Force
-          }
-
       - name: Upload Test Results Artifact
         uses: actions/upload-artifact@v4
         if: always()
