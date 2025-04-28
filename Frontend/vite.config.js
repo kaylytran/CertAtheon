@@ -7,5 +7,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom', // important for browser-like environment
     setupFiles: './src/setupTests.js', 
+    coverage: {
+      provider: 'v8' 
+    },
   },
 });
