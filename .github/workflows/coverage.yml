@@ -96,7 +96,8 @@ jobs:
           fail_below_min: true
           format: markdown
           output: both
-          threshold: 80
+          thresholds: '{"line":80}'
+        
 
       - name: Publish Test Results to GitHub UI
         uses: dorny/test-reporter@v1
