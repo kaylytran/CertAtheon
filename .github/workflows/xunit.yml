@@ -26,12 +26,7 @@ jobs:
         run: dotnet restore CertAtheon.sln
 
       - name: Run Backend Tests
-        run: dotnet test --configuration Release --verbosity detailed --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
-      
-      - name: List Test Results Directory
-        run: |
-          echo "Listing test results directory contents:"
-          ls -R **/TestResults
+        run: dotnet test --logger trx --results-directory "TestResults"
       
       - name: Publish Backend Test Results
         uses: dorny/test-reporter@v1
