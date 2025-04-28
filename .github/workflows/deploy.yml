@@ -40,7 +40,7 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +51,7 @@ jobs:
           path: ./deploy
 
       - name: Start GitHub Deployment
+        id: deployment_start
         uses: bobheadxi/deployments@v1
         with:
           step: start
@@ -65,7 +66,7 @@ jobs:
           slot-name: 'Production'
           package: ./deploy/app.zip
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-    
+
       - name: Finish GitHub Deployment
         uses: bobheadxi/deployments@v1
         with:
@@ -73,3 +74,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           env: 'Production'
           status: success
+          deployment_id: ${{ steps.deployment_start.outputs.deployment_id }}
+
