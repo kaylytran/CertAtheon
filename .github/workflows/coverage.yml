@@ -28,19 +28,20 @@ jobs:
       - name: Install dotnet-sonarscanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: Start SonarCloud analysis
+      - name: Begin SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:"${{ secrets.YOUR_PROJECT_KEY }}" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
+          dotnet sonarscanner begin /k:"${{ secrets.YOUR_PROJECT_KEY }}" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
-      - name: Build solution
-        run: dotnet build CertAtheon.sln --no-incremental
-
-      - name: Run tests
-        run: dotnet test CertAtheon.sln --no-build --collect:"XPlat Code Coverage"
+      - name: Restore, build, test and collect coverage
+        run: |
+          dotnet restore
+          dotnet build --no-restore
+          dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       - name: End SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+        run: |
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
