@@ -32,11 +32,12 @@ jobs:
         working-directory: Frontend
         run: npm run test
 
-      - name: List Reports Directory
-        working-directory: Frontend
-        run: |
-          echo "Checking reports folder contents:"
-          ls -la reports
+      - name: Upload Frontend Test Report
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: frontend-test-results
+          path: Frontend/reports/vitest-junit.xml
 
       - name: Publish Frontend Test Results
         uses: dorny/test-reporter@v1
