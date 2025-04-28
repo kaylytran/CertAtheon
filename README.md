@@ -1,5 +1,7 @@
 # CertAethon – Certification Tracker Platform
 
+![Build and Test](https://github.com/kaylytran/CertAtheon/actions/workflows/build-and-test.yml/badge.svg)
+
 CertAethon is a cloud-native certification management platform developed for CSCE 590 – Azure Cloud Native Development. It enables employees and administrators to add, manage, validate, and track certifications in real time, leveraging a modern Azure-based microservices architecture.
 
 > Developed by Team CertAefied Copilots 
