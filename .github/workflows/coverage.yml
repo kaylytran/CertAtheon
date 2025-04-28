@@ -82,10 +82,9 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        working-directory: Frontend
         with:
           name: frontend-coverage
-          path: coverage/lcov.info
+          path: Frontend/coverage/lcov.info
 
       - name: Publish coverage to PR
         uses: codecov/codecov-action@v4
