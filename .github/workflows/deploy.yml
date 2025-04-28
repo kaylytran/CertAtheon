@@ -42,12 +42,21 @@ jobs:
     needs: build
     
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: webapp-package
           path: ./deploy
-      
+
+      - name: Start GitHub Deployment
+        uses: bobheadxi/deployments@v1
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: 'Production'
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -57,11 +66,10 @@ jobs:
           package: ./deploy/app.zip
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
     
-      - name: Mark deployment as finished
+      - name: Finish GitHub Deployment
         uses: bobheadxi/deployments@v1
         with:
           step: finish
           token: ${{ secrets.GITHUB_TOKEN }}
           env: 'Production'
           status: success
-      
