@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    const url = import.meta.env.VITE_API_BASE_URL; 
+    const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem("authToken");
 
     // State Variables
@@ -783,17 +783,15 @@ const AdminPage = () => {
                                             </td>
                                             {/* View Document Button */}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <div>
-                                                    {employee.documentUrl ? (
-                                                    <button
-                                                        onClick={() => window.open(employee.documentUrl, '_blank')}
-                                                        className="text-blue-500 hover:underline"
-                                                    >
-                                                        View Document
-                                                    </button>
-                                                    ) : null}
-                                                </div>
-                                            </td>
+                                            {employee.documentUrl ? (
+                                                <button
+                                                onClick={() => window.open(employee.documentUrl, '_blank')}
+                                                className="text-blue-500 hover:underline"
+                                                >
+                                                View Document
+                                                </button>
+                                            ) : null}
+                                            </td>                                            
                                         </tr>
                                     ))
                                 ) : (
