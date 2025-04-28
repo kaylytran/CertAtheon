@@ -26,12 +26,18 @@ jobs:
         run: dotnet restore CertAtheon.sln
 
       - name: Run Backend Tests
-        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity detailed --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
-
-      - name: Publish Test Results
+        run: dotnet test --configuration Release --verbosity detailed --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+      
+      - name: List Test Results Directory
+        run: |
+          echo "Listing test results directory contents:"
+          ls -R **/TestResults
+      
+      - name: Publish Backend Test Results
         uses: dorny/test-reporter@v1
-        if: success() || failure()  # always publish even if tests fail
+        if: success() || failure()
         with:
           name: Backend Tests
-          path: '**/test-results.trx'
+          path: '**/TestResults/test-results.trx'
           reporter: dotnet-trx
+      
