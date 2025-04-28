@@ -23,7 +23,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.x' # or '9.x' if you are using .NET 9 Preview
+          dotnet-version: '9.x' # or '9.x' if you are using .NET 9 Preview
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
