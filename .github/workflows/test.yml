@@ -8,12 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  backend:
     runs-on: windows-latest
     permissions:
       contents: read
-      checks: write
-      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -24,37 +22,45 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Restore dependencies
+      - name: Restore backend dependencies
         run: dotnet restore CertAtheon.sln
 
-      - name: Build solution
+      - name: Build backend
         run: dotnet build CertAtheon.sln --configuration Release --no-restore
 
-      - name: Run tests and output results
-        run: dotnet test CertAtheon.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+      - name: Run backend tests
+        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity normal
 
-      - name: Upload test results (.trx)
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: '**/TestResults/*.trx'
-
-      - name: Publish Test Results
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: .NET Test Results
-          path: '**/TestResults/*.trx'
-          reporter: dotnet-trx
-
-      - name: Publish Backend
+      - name: Publish backend
         run: dotnet publish Backend/Backend.csproj -c Release -o ${{ github.workspace }}/publish
 
-      - name: Zip artifacts
+      - name: Zip backend artifacts
         run: Compress-Archive -Path ${{ github.workspace }}/publish/* -DestinationPath ${{ github.workspace }}/app.zip
 
-      - name: Upload build artifact
+      - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
-          name: webapp-artifact
+          name: backend-artifact
           path: ${{ github.workspace }}/app.zip
+
+  frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm install
+
+      - name: Run frontend tests
+        working-directory: Frontend
+        run: npm run test -- --ci --watchAll=false
