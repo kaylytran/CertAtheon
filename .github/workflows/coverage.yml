@@ -88,26 +88,26 @@ jobs:
           name: frontend-coverage-report
           path: Frontend/coverage/lcov.info
 
-      - name: Display Frontend Coverage Summary
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: Frontend/coverage/lcov.info
-          badge: true
-          fail_below_min: true
-          format: markdown
-          output: both
-          thresholds: '{"line":80}'
+      # - name: Display Frontend Coverage Summary
+      #   uses: irongut/CodeCoverageSummary@v1.3.0
+      #   with:
+      #     filename: Frontend/coverage/lcov.info
+      #     badge: true
+      #     fail_below_min: true
+      #     format: markdown
+      #     output: both
+      #     thresholds: '{"line":80}'
         
 
-      - name: Publish Test Results to GitHub UI
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: All Test Results
-          path: |
-            **/TestResults/*.trx
-            Frontend/junit.xml
-          reporter: java-junit
+      # - name: Publish Test Results to GitHub UI
+      #   uses: dorny/test-reporter@v1
+      #   if: always()
+      #   with:
+      #     name: All Test Results
+      #     path: |
+      #       **/TestResults/*.trx
+      #       Frontend/junit.xml
+      #     reporter: java-junit
 
       - name: End SonarCloud analysis
         env:
