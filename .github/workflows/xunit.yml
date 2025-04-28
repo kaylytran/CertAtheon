@@ -12,10 +12,14 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+      checks: write  # Required for test reporter
+      pull-requests: write  # Required for PR comments
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for proper git history
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -26,13 +30,30 @@ jobs:
         run: dotnet restore CertAtheon.sln
 
       - name: Run Backend Tests
-        run: dotnet test --logger trx --results-directory "TestResults"
-      
+        run: |
+          dotnet test CertAtheon.sln --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory TestResults --no-restore
+          # Ensure test results exist
+          if (Test-Path "TestResults/test-results.trx") {
+            Write-Host "Test results found"
+          } else {
+            Write-Host "No test results found!"
+            Get-ChildItem -Recurse -Include *.trx | ForEach-Object { Write-Host "Found trx file: $($_.FullName)" }
+            exit 1
+          }
+
+      - name: Upload Test Results Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: TestResults/test-results.trx
+          retention-days: 5
+
       - name: Publish Backend Test Results
         uses: dorny/test-reporter@v1
-        if: success() || failure()
+        if: always()
         with:
-          name: Backend Tests
-          path: '**/TestResults/test-results.trx'
+          name: Backend Tests (XUnit)
+          path: '**/TestResults/*.trx'
           reporter: dotnet-trx
-      
+          fail-on-error: false  # Don't fail workflow if reporting fails
