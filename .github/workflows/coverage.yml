@@ -37,6 +37,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:"<YOUR_PROJECT_KEY>" /o:"<YOUR_ORGANIZATION>" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet sonarscanner begin /k:""${{ secrets.YOUR_PROJECT_KEY }}"" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
           dotnet test --no-build --collect:"XPlat Code Coverage"
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
