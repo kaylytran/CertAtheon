@@ -23,7 +23,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '8.x' # or '9.x' if you are using .NET 9 Preview
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Backend dependencies
+        run: dotnet restore
+
+      - name: Install Frontend dependencies
+        working-directory: Frontend
+        run: npm install
 
       - name: Install dotnet-sonarscanner
         run: dotnet tool install --global dotnet-sonarscanner
@@ -32,16 +44,26 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:"${{ secrets.YOUR_PROJECT_KEY }}" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet sonarscanner begin \
+            /k:"${{ secrets.YOUR_PROJECT_KEY }}" \
+            /o:"${{ secrets.YOUR_ORGANIZATION }}" \
+            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+            /d:sonar.javascript.lcov.reportPaths="Frontend/coverage/lcov.info" \
+            /d:sonar.sources="Backend,Frontend/src/components" \
+            /d:sonar.exclusions="**/node_modules/**,**/*.test.jsx,**/*.spec.jsx"
 
-      - name: Restore, build, test and collect coverage
-        run: |
-          dotnet restore
-          dotnet build --no-restore
-          dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+      - name: Build Backend
+        run: dotnet build --no-restore
+
+      - name: Run Backend Tests and Collect Coverage
+        run: dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Run Frontend Tests and Generate Coverage
+        working-directory: Frontend
+        run: npm run coverage
 
       - name: End SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
