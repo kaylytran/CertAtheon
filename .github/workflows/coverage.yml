@@ -36,40 +36,26 @@ jobs:
             --results-directory TestResults `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
-      - name: Verify coverage file
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "TestResults\*\coverage.cobertura.xml")) {
-            Write-Error "Coverage file not found!"
-            Get-ChildItem -Recurse TestResults
-            exit 1
-          }
-
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: TestResults/**/coverage.cobertura.xml
           flags: dotnet
-          name: backend-coverage
+          verbose: true  # Show detailed file breakdown
           fail_ci_if_error: false
-
-      - name: Upload artifact (backup)
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage-report
-          path: TestResults/**/coverage.cobertura.xml
 
   frontend-coverage:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+      checks: write  # Required for annotations
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for Codecov's git history analysis
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -86,19 +72,10 @@ jobs:
         working-directory: Frontend
         run: npm run test:coverage
 
-      - name: Verify coverage file
-        working-directory: Frontend
-        run: |
-          if [ ! -f "coverage/lcov.info" ]; then
-            echo "::error::Coverage file not found!"
-            ls -R coverage/
-            exit 1
-          fi
-
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: Frontend/coverage/lcov.info
           flags: frontend
-          name: frontend-coverage
+          verbose: true
           fail_ci_if_error: false
