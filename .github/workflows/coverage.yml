@@ -6,7 +6,7 @@ on:
       - main
       - development
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     branches:
       - main
       - development
@@ -25,18 +25,22 @@ jobs:
         with:
           dotnet-version: '9.x'
 
-      - name: Restore and build
-        run: |
-          dotnet restore
-          dotnet build --no-restore
-
       - name: Install dotnet-sonarscanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: Run SonarCloud analysis
+      - name: Start SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:""${{ secrets.YOUR_PROJECT_KEY }}"" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
-          dotnet test --no-build --collect:"XPlat Code Coverage"
-          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          dotnet sonarscanner begin /k:"${{ secrets.YOUR_PROJECT_KEY }}" /o:"${{ secrets.YOUR_ORGANIZATION }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
+
+      - name: Build solution
+        run: dotnet build CertAtheon.sln --no-incremental
+
+      - name: Run tests
+        run: dotnet test CertAtheon.sln --no-build --collect:"XPlat Code Coverage"
+
+      - name: End SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
