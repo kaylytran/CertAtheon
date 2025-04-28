@@ -25,11 +25,25 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore CertAtheon.sln
 
-      - name: Build
+      - name: Build solution
         run: dotnet build CertAtheon.sln --configuration Release --no-restore
 
-      - name: Run tests
-        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity normal
+      - name: Run tests and output results
+        run: dotnet test CertAtheon.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results (.trx)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: .NET Test Results
+          path: '**/TestResults/*.trx'
+          reporter: dotnet-trx
 
       - name: Publish Backend
         run: dotnet publish Backend/Backend.csproj -c Release -o ${{ github.workspace }}/publish
