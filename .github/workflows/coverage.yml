@@ -1,34 +1,42 @@
-name: Upload Coverage Report to Codecov
+name: SonarCloud
 
 on:
-  pull_request:
-    branches: [ "main", "development" ]
   push:
-    branches: [ "main", "development" ]
+    branches:
+      - main
+      - development
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+      - development
 
 jobs:
-  upload-coverage:
+  sonarcloud:
+    name: SonarCloud Analysis
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
 
-    - name: Restore and Build
-      run: |
-        dotnet restore
-        dotnet build --no-restore
+      - name: Restore and build
+        run: |
+          dotnet restore
+          dotnet build --no-restore
 
-    - name: Run tests and generate coverage report
-      run: |
-        dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults --no-build
+      - name: Install dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner
 
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./TestResults/**/coverage.cobertura.xml
+      - name: Run SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin /k:"<YOUR_PROJECT_KEY>" /o:"<YOUR_ORGANIZATION>" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          dotnet test --no-build --collect:"XPlat Code Coverage"
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
