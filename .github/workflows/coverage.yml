@@ -23,7 +23,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x' # or '9.x' if you are using .NET 9 Preview
+          dotnet-version: '9.x' # Adjust if using .NET 8 or 9 Preview
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,11 +57,56 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run Backend Tests and Collect Coverage
-        run: dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        run: |
+          dotnet test --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=backend-tests.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       - name: Run Frontend Tests and Generate Coverage
         working-directory: Frontend
         run: npm run coverage
+
+      - name: Upload Backend Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: '**/TestResults/backend-tests.trx'
+
+      - name: Upload Frontend Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: Frontend/junit.xml
+
+      - name: Upload Backend Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: '**/TestResults/**/coverage.opencover.xml'
+
+      - name: Upload Frontend Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: Frontend/coverage/lcov.info
+
+      - name: Display Frontend Coverage Summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: Frontend/coverage/lcov.info
+          badge: true
+          fail_below_min: true
+          format: markdown
+          output: both
+          threshold: 80
+
+      - name: Publish Test Results to GitHub UI
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: All Test Results
+          path: |
+            **/TestResults/*.trx
+            Frontend/junit.xml
+          reporter: java-junit
 
       - name: End SonarCloud analysis
         env:
