@@ -8,7 +8,9 @@ export default defineConfig({
     environment: 'jsdom', // important for browser-like environment
     setupFiles: './src/setupTests.js', 
     coverage: {
-      provider: 'v8' 
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      reportsDirectory: './coverage', // Force output folder
     },
   },
 });
