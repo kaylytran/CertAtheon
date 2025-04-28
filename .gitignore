@@ -34,6 +34,8 @@ build/
 **/bin/
 **/obj/
 **/wwwroot/
+TestResults/
+*.trx
 
 # Ignore build output
 *bin/
@@ -43,3 +45,4 @@ build/
 .prev-migrations
 
 *appsettings.Development.json
+

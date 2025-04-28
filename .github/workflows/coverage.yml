@@ -1,0 +1,104 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
+  workflow_dispatch:
+
+jobs:
+  backend-coverage:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Clean and run tests
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force TestResults -ErrorAction SilentlyContinue
+          mkdir TestResults
+          
+          dotnet test CertAtheon.sln `
+            --configuration Release `
+            --collect:"XPlat Code Coverage" `
+            --logger "trx;LogFileName=results.trx" `
+            --results-directory TestResults `
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Verify coverage file
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "TestResults\*\coverage.cobertura.xml")) {
+            Write-Error "Coverage file not found!"
+            Get-ChildItem -Recurse TestResults
+            exit 1
+          }
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: TestResults/**/coverage.cobertura.xml
+          flags: dotnet
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      - name: Upload artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: TestResults/**/coverage.cobertura.xml
+
+  frontend-coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for Codecov's git history analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Run coverage tests
+        working-directory: Frontend
+        run: npm run test:coverage
+
+      - name: Verify coverage file
+        working-directory: Frontend
+        run: |
+          if [ ! -f "coverage/lcov.info" ]; then
+            echo "::error::Coverage file not found!"
+            ls -R coverage/
+            exit 1
+          fi
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: Frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false

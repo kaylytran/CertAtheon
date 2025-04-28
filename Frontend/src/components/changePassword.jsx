@@ -7,6 +7,7 @@ const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const url = import.meta.env.VITE_API_BASE_URL;
 
@@ -15,40 +16,42 @@ const ChangePassword = () => {
     setError("");
     setSuccess("");
 
+    if (!currentPassword || !newPassword) {
+      setError("Please fill out all fields.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const response = await axios.post(
         `${url}/api/auth/change-password`,
-        {
-          currentPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { currentPassword, newPassword },
+        { headers: { "Content-Type": "application/json" } }
       );
 
       if (response.status === 200) {
         setSuccess("Password changed successfully.");
         setTimeout(() => {
-          navigate("/"); // Redirect to home page or login page
+          navigate("/");
         }, 2000);
       }
     } catch (error) {
       console.error("Error during password change:", error.response?.data);
-      if (error.response && error.response.data && error.response.data.message) {
+      if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
         setError("An error occurred. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-gray-100">
       <header className="w-full bg-blue-500 text-white py-4 text-left text-2xl">
-        <text className="ml-4">CertATheon</text>
+        <h1 className="ml-4">CertATheon</h1>
       </header>
       <div className="flex-grow flex items-center justify-center">
         <div className="max-w-sm mx-auto p-6 border border-gray-300 rounded-lg shadow-md bg-white mt-6">
@@ -68,7 +71,6 @@ const ChangePassword = () => {
                 id="currentPassword"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
@@ -84,15 +86,15 @@ const ChangePassword = () => {
                 id="newPassword"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
             <button
               type="submit"
-              className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+              disabled={loading}
             >
-              Change Password
+              {loading ? "Changing..." : "Change Password"}
             </button>
           </form>
         </div>

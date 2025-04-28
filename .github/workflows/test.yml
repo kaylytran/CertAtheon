@@ -1,0 +1,84 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main", "development" ]
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Restore backend dependencies
+        run: dotnet restore CertAtheon.sln
+
+      - name: Build backend
+        run: dotnet build CertAtheon.sln --configuration Release --no-restore
+
+      - name: Run backend tests with code coverage
+        run: dotnet test CertAtheon.sln --configuration Release --no-build --verbosity detailed --collect:"XPlat Code Coverage" --logger "console;verbosity=detailed"
+
+      - name: Upload backend test results (.trx files)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: '**/TestResults/*.trx'
+
+      - name: Upload backend code coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-code-coverage
+          path: '**/TestResults/**/coverage.cobertura.xml'
+
+      - name: Publish backend
+        run: dotnet publish Backend/Backend.csproj -c Release -o ${{ github.workspace }}/publish
+
+      - name: Zip backend artifacts
+        run: Compress-Archive -Path ${{ github.workspace }}/publish/* -DestinationPath ${{ github.workspace }}/app.zip
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-artifact
+          path: ${{ github.workspace }}/app.zip
+
+  frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm install
+
+      - name: Run frontend tests
+        working-directory: Frontend
+        run: npm run test
+
+      - name: Upload frontend test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: Frontend/reports/jest-junit.xml
