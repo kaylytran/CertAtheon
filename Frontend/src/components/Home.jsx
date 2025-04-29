@@ -211,6 +211,8 @@ const Home = () => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
+        setErrorMessage(""); // Clear error message on input change
+
         // If the certification dropdown is changed, update the level automatically
         if (name === "certification") {
             const selectedCert = certificateCatalog.find(
