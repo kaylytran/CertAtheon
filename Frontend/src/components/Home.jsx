@@ -22,39 +22,52 @@ const Home = () => {
         documentUrl: null
     });
     const [uploadedFile, setUploadedFile] = useState(null);
+    
+    // handle error message in adding/editing certifications
     const [errorMessage, setErrorMessage] = useState("");
+
+    // Add isMounted ref to prevent state updates after unmount
     const isMounted = useRef(true);
     
-    // Updated pagination state for server-side pagination
+    // Server-side pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
     const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
+    
+    // Flag to track if total count has been fetched
+    const [totalCountFetched, setTotalCountFetched] = useState(false);
 
     const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem('token');
 
+    //BlogURL
     let blogUrl;
+    // Mock user info from localStorage
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',
         lastName: localStorage.getItem('lastName') || '',
         userRole: localStorage.getItem('userRole') || 'User',
     };
 
+    // Set isMounted to false when component unmounts
     useEffect(() => {
         return () => {
             isMounted.current = false;
         };
     }, []);
 
+    // Navigate to home
     const navigateToHome = () => {
         navigate('/home');
     };
 
+    // Navigate to profile
     const navigateToProfile = () => {
         navigate('/profile');
     };
 
+    // Handle logout
     const handleLogout = () => {
         localStorage.clear();
         navigate('/');
@@ -66,13 +79,51 @@ const Home = () => {
             const newTotalPages = Math.ceil(totalItems / itemsPerPage) || 1;
             setTotalPages(newTotalPages);
             
-            // Reset to first page when items per page changes and current page is out of bounds
+            // Reset to first page when data changes and current page is out of bounds
             if (currentPage > newTotalPages) {
                 setCurrentPage(1);
             }
         }
     }, [totalItems, itemsPerPage, currentPage]);
     
+    // Fetch total count separately to ensure consistent count regardless of page size
+    const fetchTotalCount = async () => {
+        try {
+            // Make API request to get total count
+            const response = await axios.get(`${url}/api/Certificates/count`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (isMounted.current) {
+                // If your API has a dedicated count endpoint, use that
+                const count = response.data.totalCount || 0;
+                setTotalItems(count);
+                setTotalCountFetched(true);
+                console.log("Total certifications count:", count);
+            }
+        } catch (err) {
+            console.error("Error fetching total count:", err);
+            // If count endpoint fails, we'll estimate from data pagination
+            setTotalCountFetched(false);
+            
+            // Fallback: try to get the total count by fetching all certificates once
+            try {
+                const fallbackResponse = await axios.get(`${url}/api/Certificates`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if (isMounted.current && fallbackResponse.data?.records) {
+                    const certs = fallbackResponse.data.records || [];
+                    setTotalItems(certs.length);
+                    setTotalCountFetched(true);
+                    console.log("Estimated total certifications (fallback):", certs.length);
+                }
+            } catch (fallbackErr) {
+                console.error("Error fetching total count (fallback):", fallbackErr);
+            }
+        }
+    };
+
     // Updated fetchCertificates function to use server-side pagination
     const fetchCertificates = async () => {
         try {
@@ -91,21 +142,28 @@ const Home = () => {
             });
 
             if (isMounted.current) {
-                // Extract certificates and total count from response
+                // Extract certificates from response
                 const certificationsData = response.data.records || [];
-                // Assuming the API returns total count in the response
-                // If it doesn't, you'll need to make a separate API call to get the total count
-                const totalCount = response.data.totalCount || certificationsData.length;
-                
                 setMyCertifications(certificationsData);
-                setTotalItems(totalCount);
+                
+                // If we haven't fetched the total count yet, or if the API doesn't provide it in a consistent way,
+                // we can use the current response to estimate total count
+                if (!totalCountFetched) {
+                    // If the API returns a total count, use it
+                    if (response.data.totalCount !== undefined) {
+                        setTotalItems(response.data.totalCount);
+                    } 
+                    // If we received fewer items than requested, assume we're at the end
+                    else if (certificationsData.length < itemsPerPage) {
+                        setTotalItems((currentPage - 1) * itemsPerPage + certificationsData.length);
+                    }
+                }
 
                 console.log(
                     "Certifications loaded:",
                     certificationsData.length,
-                    "items of",
-                    totalCount,
-                    "total items"
+                    "items for page",
+                    currentPage
                 );
             }
         } catch (err) {
@@ -127,6 +185,7 @@ const Home = () => {
             if (isMounted.current) {
                 const data = response.data.records;
                 
+                // Process unique catalog entries
                 const uniqueCatalogEntries = {};
                 if (Array.isArray(data)) {
                     data.forEach(cert => {
@@ -174,7 +233,7 @@ const Home = () => {
         }
     };
 
-    // Update the effect to call fetchCertificates whenever pagination changes
+    // Initial data loading
     useEffect(() => {
         const cachedPic = localStorage.getItem("profilePictureUrl");
         if (cachedPic) {
@@ -183,9 +242,16 @@ const Home = () => {
             fetchProfilePicture();
         }
 
-        fetchCertificates();
         fetchCertificateCatalog();
-    }, [token, url, currentPage, itemsPerPage]); // Add currentPage and itemsPerPage as dependencies
+        
+        // Fetch total count once when component mounts
+        fetchTotalCount();
+    }, [token, url]);
+    
+    // Fetch certificates whenever pagination changes
+    useEffect(() => {
+        fetchCertificates();
+    }, [currentPage, itemsPerPage]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -267,10 +333,10 @@ const Home = () => {
     const handleAddNewSubmit = async (e) => {
         e.preventDefault();
 
-        // if (!formData.certificationId) {
-        //     alert("No such certificate found in the catalog.");
-        //     return;
-        // }
+        if (!formData.certificationId) {
+            alert("No such certificate found in the catalog.");
+            return;
+        }
 
         // Prepare the payload for the POST request
         const payload = {
@@ -306,7 +372,12 @@ const Home = () => {
                     documentUrl: null,
                     certificationId: null,
                 });
-                fetchCertificates(); // Refresh the certifications list
+                
+                // Fetch new total count after adding a certificate
+                fetchTotalCount();
+                
+                // Refresh the certifications list
+                fetchCertificates();
             }
         } catch (err) {
             console.error("Error adding certificate:", err);
@@ -371,13 +442,17 @@ const Home = () => {
                 if (isMounted.current) {
                     alert("Certification deleted successfully!");
                     
-                    // After deleting, refresh the current page
-                    // If there are no items left on this page, go back to the previous page
+                    // After deleting, check if we need to adjust the page
                     if (myCertifications.length === 1 && currentPage > 1) {
+                        // If this is the last item on the page, go back to the previous page
                         setCurrentPage(prevPage => prevPage - 1);
                     } else {
+                        // Otherwise just refresh the current page
                         fetchCertificates();
                     }
+                    
+                    // Fetch new total count after deleting a certificate
+                    fetchTotalCount();
                 }
             } catch (err) {
                 console.error("Error deleting certification:", err);
@@ -392,13 +467,13 @@ const Home = () => {
         }
     };
 
-    // Updated handlePageChange function
+    // Handle page change
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
         // fetchCertificates is called automatically via the useEffect
     };
     
-    // Updated handleItemsPerPageChange function
+    // Handle items per page change
     const handleItemsPerPageChange = (e) => {
         const value = parseInt(e.target.value);
         setItemsPerPage(value);
