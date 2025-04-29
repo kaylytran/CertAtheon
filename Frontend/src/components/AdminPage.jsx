@@ -3,16 +3,14 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from 'dayjs';
 
-
 const AdminPage = () => {
     const navigate = useNavigate();
     const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem("authToken");
 
     // State Variables
-    const [employees, setEmployees] = useState([]); // Original employee data
+    const [employees, setEmployees] = useState([]); // Employees data from API
     const [filteredEmployees, setFilteredEmployees] = useState([]); // Filtered employee data
-    const [searchQuery, setSearchQuery] = useState(""); // Search query
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [totalEmployees, setTotalEmployees] = useState(0);
@@ -29,10 +27,14 @@ const AdminPage = () => {
     // Track if component is mounted to prevent state updates after unmount
     const isMounted = useRef(true);
     
-    // Pagination state
+    // Pagination state (using API parameters)
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [itemsPerPage, setItemsPerPage] = useState(5); // API limit parameter
+    const [offset, setOffset] = useState(0); // API offset parameter
+    const [totalRecords, setTotalRecords] = useState(0); // Total count from API
     const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState(""); // Search input state
+    const [nameFilter, setNameFilter] = useState(""); // API nameFilter parameter
     
     const [newEmployeeData, setNewEmployeeData] = useState({
         firstName: "",
@@ -81,14 +83,18 @@ const AdminPage = () => {
         };
     }, [token, url]);    
 
-    // Fetch Dashboard Data
+    // Fetch Dashboard Data with API pagination
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                // Use API pagination parameters
+                const response = await axios.get(
+                    `${url}/api/Dashboard?year=${year}&offset=${offset}&limit=${itemsPerPage}${nameFilter ? `&nameFilter=${nameFilter}` : ''}`, 
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
 
                 // Only update state if component is still mounted
                 if (isMounted.current) {
@@ -96,33 +102,24 @@ const AdminPage = () => {
                     setTotalEmployees(dashboardData.totalEmployees || 0);
                     setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
                     setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
+                    
                     const employeeData = dashboardData.records || [];
+                    setFilteredEmployees(employeeData);
                     
-                    // Process and filter unique employees
-                    const uniqueEmployees = {};
-                    employeeData.forEach(employee => {
-                        // Use employeeId as the unique key, or a combination of fields
-                        const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
-                        if (!uniqueEmployees[key]) {
-                            uniqueEmployees[key] = employee;
-                        }
-                    });
-
-                    const uniqueEmployeesList = Object.values(uniqueEmployees);
+                    // Set total records for pagination calculation
+                    // This should be provided by the API as part of the response
+                    setTotalRecords(dashboardData.totalRecords || 0);
                     
-                    // Store original data
-                    setEmployees(uniqueEmployeesList);
-                    // Initialize filtered data with all employees
-                    setFilteredEmployees(uniqueEmployeesList);
-                    // Clear search
-                    setSearchQuery("");
-                    console.log("Data loaded:", uniqueEmployeesList.length, "unique employees");
+                    // Calculate total pages based on total records
+                    const newTotalPages = Math.ceil(dashboardData.totalRecords / itemsPerPage) || 1;
+                    setTotalPages(newTotalPages);
+                    
+                    console.log("Data loaded:", employeeData.length, "employees");
                 }
             } catch (err) {
                 console.error("Failed to load dashboard data:", err);
                 if (isMounted.current) {
                     setError("Failed to load dashboard data.");
-                    setEmployees([]);
                     setFilteredEmployees([]);
                 }
             } finally {
@@ -133,71 +130,20 @@ const AdminPage = () => {
         };
 
         fetchDashboardData();
-    }, [year, token, url]);
-    
-    // Calculate pagination values whenever filtered data changes
-    useEffect(() => {
-        if (isMounted.current) {
-            const newTotalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
-            setTotalPages(newTotalPages);
-            
-            // Reset to first page when filters change and current page is out of bounds
-            if (currentPage > newTotalPages) {
-                setCurrentPage(1);
-            }
-        }
-    }, [filteredEmployees, itemsPerPage, currentPage]);
+    }, [year, token, url, offset, itemsPerPage, nameFilter]);
     
     // Handle search input change
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearchQuery(value);
-        
-        // If search is cleared, reset to show all employees
-        if (!value || value.trim() === "") {
-            setFilteredEmployees([...employees]);
-        }
     };
 
-    // Ultra-reliable search function that works for all cases
+    // Apply search filter using API nameFilter
     const applySearch = () => {
         console.log("Applying search for:", searchQuery);
-        console.log("Total employees:", employees.length);
-        
-        // If search is empty, show all employees
-        if (!searchQuery || searchQuery.trim() === "") {
-            console.log("Empty search, showing all employees");
-            setFilteredEmployees([...employees]);
-            return;
-        }
-        
-        // Create new array for filtered results
-        const results = [];
-        const query = searchQuery.toLowerCase().trim();
-        
-        // Manual loop through employees for maximum reliability
-        for (let i = 0; i < employees.length; i++) {
-            const employee = employees[i];
-            
-            // Skip if employee is invalid or has no name
-            if (!employee || !employee.fullName) {
-                continue;
-            }
-            
-            const fullName = employee.fullName.toLowerCase();
-            
-            // Add employee to results if name contains search query
-            if (fullName.indexOf(query) !== -1) {
-                results.push(employee);
-            }
-        }
-        
-        console.log("Search results:", results.length);
-        console.log("Results:", results.map(e => e.fullName));
-        
-        // Update filtered employees with new results array
-        setFilteredEmployees(results);
-        setCurrentPage(1); // Reset to first page after search
+        setNameFilter(searchQuery);
+        setOffset(0); // Reset to first page when searching
+        setCurrentPage(1);
     };
     
     // Handle Enter key press in search input
@@ -207,15 +153,10 @@ const AdminPage = () => {
         }
     };
     
-    // Get current items for pagination
-    const getCurrentItems = () => {
-        const indexOfLastItem = currentPage * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        return filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
-    };
-    
     // Handle page change
     const handlePageChange = (pageNumber) => {
+        const newOffset = (pageNumber - 1) * itemsPerPage;
+        setOffset(newOffset);
         setCurrentPage(pageNumber);
     };
     
@@ -223,7 +164,8 @@ const AdminPage = () => {
     const handleItemsPerPageChange = (e) => {
         const value = parseInt(e.target.value);
         setItemsPerPage(value);
-        setCurrentPage(1); // Reset to first page when changing items per page
+        setOffset(0); // Reset to first page when changing items per page
+        setCurrentPage(1);
     };
 
     // Input handler for new employee form
@@ -307,30 +249,11 @@ const AdminPage = () => {
             alert("Employee added successfully!");
             setShowAddModal(false);
 
-            // Refresh the dashboard data
-            const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            // Reset to first page and refresh data
+            setOffset(0);
+            setCurrentPage(1);
             
-            if (isMounted.current) {
-                const dashboardData = response.data || {};
-                const employeeData = dashboardData.records || [];
-                
-                // Process unique employees after adding new one
-                const uniqueEmployees = {};
-                employeeData.forEach(employee => {
-                    const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
-                    if (!uniqueEmployees[key]) {
-                        uniqueEmployees[key] = employee;
-                    }
-                });
-                
-                const uniqueEmployeesList = Object.values(uniqueEmployees);
-                
-                setEmployees(uniqueEmployeesList);
-                setFilteredEmployees(uniqueEmployeesList);
-                setCurrentPage(1); // Reset to first page after adding new employee
-            }
+            // No need to fetch all data again - the effect hook will trigger based on offset change
         } catch (err) {
             console.error("Error adding employee:", err);
             alert("Failed to add employee.");
@@ -339,50 +262,11 @@ const AdminPage = () => {
 
     // Handle year submission
     const handleYearSubmit = async () => {
-        try {
-            setLoading(true);
-            const response = await axios.get(`${url}/api/Dashboard?year=${year}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (isMounted.current) {
-                const dashboardData = response.data || {};
-                setTotalEmployees(dashboardData.totalEmployees || 0);
-                setEmployeesWithCertificate(dashboardData.employeesWithCertificate || 0);
-                setOverallAdoptionRate(dashboardData.overallAdoptionRate || 0);
-                const employeeData = dashboardData.records || [];
-                
-                // Process unique employees after year change
-                const uniqueEmployees = {};
-                employeeData.forEach(employee => {
-                    const key = employee.employeeId || `${employee.fullName}-${employee.email}`;
-                    if (!uniqueEmployees[key]) {
-                        uniqueEmployees[key] = employee;
-                    }
-                });
-                
-                const uniqueEmployeesList = Object.values(uniqueEmployees);
-                
-                // Reset everything related to search and set original data
-                setEmployees(uniqueEmployeesList);
-                setFilteredEmployees(uniqueEmployeesList);
-                setSearchQuery(""); // Clear search input
-                setCurrentPage(1); // Reset to first page
-                
-                console.log("Data reset after year change:", uniqueEmployeesList.length, "unique employees");
-            }
-        } catch (err) {
-            console.error("Failed to load dashboard data:", err);
-            if (isMounted.current) {
-                setError("Failed to load dashboard data.");
-                setEmployees([]);
-                setFilteredEmployees([]);
-            }
-        } finally {
-            if (isMounted.current) {
-                setLoading(false);
-            }
-        }
+        // Just update the year state - the effect hook will handle the API call
+        setOffset(0); // Reset to first page when changing year
+        setCurrentPage(1);
+        setNameFilter(""); // Clear any name filters
+        setSearchQuery(""); // Clear search input
     };
 
     // Handle file upload
@@ -662,6 +546,10 @@ const AdminPage = () => {
                                                 // Close the modal
                                                 setShowImportModal(false);
                                                 setImportFile(null); // Clear the file input
+                                                
+                                                // Reset pagination and refresh data
+                                                setOffset(0);
+                                                setCurrentPage(1);
                                             } catch (err) {
                                                 console.error("Error uploading file:", err);
                                                 alert("Failed to upload the file. Please try again.");
@@ -721,6 +609,10 @@ const AdminPage = () => {
                                                 // Close the modal
                                                 setShowCertFeedModal(false);
                                                 setCertFeedFile(null); // Clear the file input
+                                                
+                                                // Reset pagination and refresh data
+                                                setOffset(0);
+                                                setCurrentPage(1);
                                             } catch (err) {
                                                 console.error("Error uploading certificate feed:", err);
                                                 alert("Failed to upload the certificate feed. Please try again.");
@@ -758,12 +650,12 @@ const AdminPage = () => {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                                        <td colSpan="9" className="px-6 py-4 text-center text-sm text-gray-500">
                                             Loading...
                                         </td>
                                     </tr>
-                                ) : getCurrentItems().length > 0 ? (
-                                    getCurrentItems().map((employee, index) => (
+                                ) : filteredEmployees.length > 0 ? (
+                                    filteredEmployees.map((employee, index) => (
                                         <tr key={employee.employeeId || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.fullName}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{employee.email}</td>
@@ -776,10 +668,14 @@ const AdminPage = () => {
                                                 {employee.certificateName || "No Certificate"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.certifiedDate ? dayjs(employee.certifiedDate).format('MMMM D, YYYY') : "No Certificate"}
+                                            {employee.certifiedDate && employee.certifiedDate !== "No Certificate" 
+                                                ? dayjs(employee.certifiedDate).format('MMMM D, YYYY') 
+                                                : "No Certificate"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {employee.expiryDate ? dayjs(employee.expiryDate).format('MMMM D, YYYY') : "No Certificate"}
+                                            {employee.expiryDate && employee.expiryDate !== "No Certificate" 
+                                                ? dayjs(employee.expiryDate).format('MMMM D, YYYY') 
+                                                : "No Certificate"}
                                             </td>
                                             {/* View Document Button */}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -796,8 +692,8 @@ const AdminPage = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
-                                            {searchQuery ? "No employees found matching your search." : "No employees found."}
+                                        <td colSpan="9" className="px-6 py-4 text-center text-sm text-gray-500">
+                                            {nameFilter ? "No employees found matching your search." : "No employees found."}
                                         </td>
                                     </tr>
                                 )}
@@ -836,12 +732,12 @@ const AdminPage = () => {
                                 <div>
                                 <p className="text-sm text-gray-700">
                                   Showing <span className="font-medium">
-                                    {filteredEmployees.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                                    {filteredEmployees.length > 0 ? offset + 1 : 0}
                                   </span> to{" "}
                                   <span className="font-medium">
-                                    {Math.min(currentPage * itemsPerPage, filteredEmployees.length)}
+                                    {Math.min(offset + filteredEmployees.length, totalRecords)}
                                   </span> of{" "}
-                                  <span className="font-medium">{filteredEmployees.length}</span> results
+                                  <span className="font-medium">{totalRecords}</span> results
                                 </p>
                                 </div>
                                 <div className="flex items-center">
