@@ -228,7 +228,6 @@ namespace Backend.Controllers
                     var username  = row["username"]?.ToString()?.Trim();
 
                     if (string.IsNullOrWhiteSpace(email) ||
-                        string.IsNullOrWhiteSpace(username) ||
                         string.IsNullOrWhiteSpace(firstName) ||
                         string.IsNullOrWhiteSpace(lastName))
                     {
@@ -259,7 +258,7 @@ namespace Backend.Controllers
                     };
 
                     // you can choose a stronger temp password or generate one
-                    var tempPassword = Guid.NewGuid().ToString("N").Substring(0, 8) + "!";
+                    var tempPassword = "StrongRandomPassword@123";
                     var result = await _userManager.CreateAsync(user, tempPassword);
                     if (!result.Succeeded)
                     {
