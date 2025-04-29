@@ -9,6 +9,10 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ExcelDataReader;
+using System.Data;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace Backend.Controllers
 {
@@ -20,15 +24,21 @@ namespace Backend.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IBlobService _blobService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<DashboardController> _logger;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public DashboardController(
             ApplicationDbContext context,
             IBlobService blobService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ILogger<DashboardController> logger,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _blobService = blobService;
             _configuration = configuration;
+            _logger = logger;
+            _userManager = userManager;
         }
         
         // GET: api/dashboard?year=2025&offset=0&limit=20&nameFilter=John
@@ -164,34 +174,117 @@ namespace Backend.Controllers
             };
         }
 
-        /// Uploads an XLSX file containing the Employee Feed into the EmployeeFeeds container.
         [HttpPost("upload-employee-feed")]
+        [RequestSizeLimit(20_000_000)] // e.g. 20 MB max
         public async Task<IActionResult> UploadEmployeeFeed(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("No file uploaded.");
 
-            // generate a unique blob name
+            // 1) upload to blob
             var blobName = $"employee-feed_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-
-            // container name from config or hard-coded
             var container = _configuration["AzureBlobStorage:EmployeeFeedContainer"];
             if (string.IsNullOrWhiteSpace(container))
-                return StatusCode(StatusCodes.Status500InternalServerError, "EmployeeFeedContainer is not configured.");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                  "EmployeeFeedContainer is not configured.");
 
-            // upload
-            string url;
+            string blobUrl;
             try
             {
-                url = await _blobService.UploadFileAsync(file, blobName, container);
+                blobUrl = await _blobService.UploadFileAsync(file, blobName, container);
             }
             catch (Exception ex)
             {
-                // log and surface error
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Failed to upload employee feed: {ex.Message}");
+                _logger.LogError(ex, "Failed to upload employee feed to blob.");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                  $"Failed to upload employee feed: {ex.Message}");
             }
 
-            return Ok(new { message = "Employee feed uploaded.", url });
+            // 2) parse and create users
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            using var stream = file.OpenReadStream();
+            using var reader = ExcelReaderFactory.CreateReader(stream);
+            var ds = reader.AsDataSet(new ExcelDataSetConfiguration
+            {
+                ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                {
+                    UseHeaderRow = true
+                }
+            });
+            var table = ds.Tables[0];
+
+            var created = 0;
+            var skipped = 0;
+            foreach (DataRow row in table.Rows)
+            {
+                try
+                {
+                    var firstName = row["first_name"]?.ToString()?.Trim();
+                    var lastName  = row["last_name"]?.ToString()?.Trim();
+                    var email     = row["email"]?.ToString()?.Trim();
+                    var phone     = row["phone"]?.ToString()?.Trim();
+                    var grade     = row["role"]?.ToString()?.Trim();     // will map to JobTitle
+                    var role      = "Employee";     // will map to AppRole
+                    var username  = row["username"]?.ToString()?.Trim();
+
+                    if (string.IsNullOrWhiteSpace(email) ||
+                        string.IsNullOrWhiteSpace(firstName) ||
+                        string.IsNullOrWhiteSpace(lastName))
+                    {
+                        _logger.LogWarning("Skipping row with missing required fields: {Row}", row.ItemArray);
+                        skipped++;
+                        continue;
+                    }
+
+                    // check for existing user by email or username
+                    if (await _userManager.FindByEmailAsync(email) != null ||
+                        await _userManager.FindByNameAsync(username) != null)
+                    {
+                        _logger.LogWarning("User already exists, skipping: {Email}", email);
+                        skipped++;
+                        continue;
+                    }
+
+                    var user = new ApplicationUser
+                    {
+                        UserName           = username,
+                        Email              = email,
+                        FirstName          = firstName,
+                        LastName           = lastName,
+                        PhoneNumber        = phone,
+                        JobTitle           = grade,
+                        AppRole            = role,
+                        MustChangePassword = true
+                    };
+
+                    // you can choose a stronger temp password or generate one
+                    var tempPassword = "StrongRandomPassword@123";
+                    var result = await _userManager.CreateAsync(user, tempPassword);
+                    if (!result.Succeeded)
+                    {
+                        _logger.LogWarning("Failed to create user {Email}: {Errors}",
+                            email,
+                            string.Join(",", result.Errors));
+                        skipped++;
+                        continue;
+                    }
+
+                    created++;
+                }
+                catch (Exception exRow)
+                {
+                    _logger.LogError(exRow, "Error processing row: {Row}", row.ItemArray);
+                    skipped++;
+                }
+            }
+
+            return Ok(new
+            {
+                message    = "Employee feed processed.",
+                blobUrl,
+                created,
+                skipped
+            });
         }
 
         /// Uploads an XLSX file containing the Certificate Feed into the CertificateFeeds container.

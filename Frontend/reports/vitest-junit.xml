@@ -1,3 +1,340 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="0" failures="0" errors="0" time="0">
+
+<testsuites name="vitest tests" tests="34" failures="0" errors="0" time="6.6549626667">
+    <testsuite name="src/components/AdminPage.test.jsx" timestamp="2025-04-29T03:25:37.075Z" hostname="Kaylys-MacBook-Pro-4.local" tests="4" failures="0" errors="0" skipped="0" time="0.9725830901">
+        <testcase classname="src/components/AdminPage.test.jsx" name="AdminPage Component &gt; renders loading text initially" time="0.2523851142">
+            <system-err>
+Failed to load dashboard data: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchDashboardData [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/AdminPage.jsx:101:52[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+An update to AdminPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/AdminPage.test.jsx" name="AdminPage Component &gt; opens and closes Add Employee modal" time="0.6407041049">
+            <system-out>
+Data loaded: [33m0[39m employees
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/components/AdminPage.test.jsx" name="AdminPage Component &gt; navigates to profile page on profile image click" time="0.0325545189">
+            <system-out>
+Data loaded: [33m0[39m employees
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/components/AdminPage.test.jsx" name="AdminPage Component &gt; logs out and clears localStorage" time="0.0429708531">
+            <system-out>
+Data loaded: [33m0[39m employees
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/CertificateCatalog.test.jsx" timestamp="2025-04-29T03:25:37.078Z" hostname="Kaylys-MacBook-Pro-4.local" tests="2" failures="0" errors="0" skipped="0" time="0.354055788">
+        <testcase classname="src/components/CertificateCatalog.test.jsx" name="CertificateCatalog Component &gt; renders loading initially" time="0.1744870191">
+            <system-out>
+Filter applied: [33m0[39m certificates match criteria
+
+            </system-out>
+            <system-err>
+Error fetching profile picture: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchProfilePicture [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/CertificateCatalog.jsx:121:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+Error fetching certificate catalog: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchCatalogData [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/CertificateCatalog.jsx:78:47[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+An update to CertificateCatalog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CertificateCatalog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/CertificateCatalog.test.jsx" name="CertificateCatalog Component &gt; shows error when fetching catalog fails" time="0.1734041529">
+            <system-out>
+Filter applied: [33m0[39m certificates match criteria
+
+            </system-out>
+            <system-err>
+Error fetching profile picture: Error: API Error
+    at [90m/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/CertificateCatalog.test.jsx:58:37
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:103:11
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:596:26
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:879:20
+    at new Promise (&lt;anonymous&gt;)
+    at runWithTimeout [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:852:10[90m)[39m
+    at runTest [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1360:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+Error fetching certificate catalog: TypeError: Cannot read properties of undefined (reading &apos;forEach&apos;)
+    at fetchCatalogData [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/CertificateCatalog.jsx:82:30[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/ChangePassword.test.jsx" timestamp="2025-04-29T03:25:37.079Z" hostname="Kaylys-MacBook-Pro-4.local" tests="5" failures="0" errors="0" skipped="0" time="0.7587975349">
+        <testcase classname="src/components/ChangePassword.test.jsx" name="ChangePassword &gt; renders correctly" time="0.337520905">
+        </testcase>
+        <testcase classname="src/components/ChangePassword.test.jsx" name="ChangePassword &gt; shows success message on password change" time="0.1916931028">
+        </testcase>
+        <testcase classname="src/components/ChangePassword.test.jsx" name="ChangePassword &gt; shows error message on invalid password" time="0.060312448">
+            <system-err>
+Error during password change: { message: [32m&apos;Invalid password&apos;[39m }
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/ChangePassword.test.jsx" name="ChangePassword &gt; does not allow submission if fields are empty" time="0.054769376">
+        </testcase>
+        <testcase classname="src/components/ChangePassword.test.jsx" name="ChangePassword &gt; disables submit button while submitting" time="0.103133914">
+            <system-err>
+An update to ChangePassword inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ChangePassword inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/Home.test.jsx" timestamp="2025-04-29T03:25:37.081Z" hostname="Kaylys-MacBook-Pro-4.local" tests="6" failures="0" errors="0" skipped="0" time="0.9705134878">
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; renders the Home page with heading" time="0.2135622308">
+            <system-out>
+Certifications loaded: [33m0[39m unique certifications
+
+            </system-out>
+            <system-err>
+Unexpected API response structure: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; displays loading text initially" time="0.0597188959">
+            <system-err>
+Error fetching profile picture: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchProfilePicture [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/Home.jsx:185:43[90m)[39m
+Error fetching certifications: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchCertificates [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/Home.jsx:114:53[90m)[39m
+An update to Home inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Home inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Error fetching certificate catalog: TypeError: Cannot read properties of undefined (reading &apos;data&apos;)
+    at fetchCertificateCatalog [90m(/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/Home.jsx:149:39[90m)[39m
+An update to Home inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() =&gt; {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you&apos;re testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; opens and closes Add Certificate modal" time="0.5819639258">
+            <system-out>
+Certifications loaded: [33m0[39m unique certifications
+
+            </system-out>
+            <system-err>
+Unexpected API response structure: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; shows &apos;No certifications found&apos; if certifications fail to load" time="0.0295656819">
+            <system-out>
+Certifications loaded: [33m0[39m unique certifications
+
+            </system-out>
+            <system-err>
+Error fetching profile picture: Error: API Error
+    at [90m/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/Home.test.jsx:76:37
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:103:11
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:596:26
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:879:20
+    at new Promise (&lt;anonymous&gt;)
+    at runWithTimeout [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:852:10[90m)[39m
+    at runTest [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1360:12[90m)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+    at runFiles [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1561:3[90m)[39m
+Unexpected API response structure: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; navigates to profile when clicking profile image" time="0.044104202">
+            <system-out>
+Certifications loaded: [33m0[39m unique certifications
+
+            </system-out>
+            <system-err>
+Unexpected API response structure: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Home.test.jsx" name="Home Component &gt; logs out and clears localStorage" time="0.038245451">
+            <system-out>
+Certifications loaded: [33m0[39m unique certifications
+
+            </system-out>
+            <system-err>
+Unexpected API response structure: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/Login.test.jsx" timestamp="2025-04-29T03:25:37.083Z" hostname="Kaylys-MacBook-Pro-4.local" tests="7" failures="0" errors="0" skipped="0" time="1.66117381">
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; renders form elements" time="0.5835812309">
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; shows loading state when submitting" time="0.380476048">
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; navigates to /admin if role is not Employee" time="0.172715421">
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; navigates to /changepassword if mustChangePassword is true" time="0.169180115">
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; navigates to /home if employee does not need to change password" time="0.1228365171">
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; shows error on invalid credentials" time="0.116612112">
+            <system-err>
+Login error: { response: { status: [33m401[39m } }
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Login.test.jsx" name="Login &gt; shows general error on unknown error" time="0.11339381">
+            <system-err>
+Login error: {}
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/Profile.test.jsx" timestamp="2025-04-29T03:25:37.085Z" hostname="Kaylys-MacBook-Pro-4.local" tests="5" failures="0" errors="0" skipped="0" time="0.753794523">
+        <testcase classname="src/components/Profile.test.jsx" name="Profile &gt; renders loading state initially" time="0.0617763131">
+        </testcase>
+        <testcase classname="src/components/Profile.test.jsx" name="Profile &gt; renders error message if fetch fails" time="0.0528822041">
+            <system-err>
+Error fetching profile data: Error: Failed
+    at [90m/Users/kaylytran/Desktop/CertAtheon/Frontend/[39msrc/components/Profile.test.jsx:38:37
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:103:11
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:596:26
+    at [90mfile:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:879:20
+    at new Promise (&lt;anonymous&gt;)
+    at runWithTimeout [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:852:10[90m)[39m
+    at runTest [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1360:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+    at runSuite [90m(file:///Users/kaylytran/Desktop/CertAtheon/Frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1507:8[90m)[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Profile.test.jsx" name="Profile &gt; renders profile data after successful fetch" time="0.088807301">
+        </testcase>
+        <testcase classname="src/components/Profile.test.jsx" name="Profile &gt; opens and closes the password change modal" time="0.4429610729">
+        </testcase>
+        <testcase classname="src/components/Profile.test.jsx" name="Profile &gt; handles logout correctly" time="0.105238847">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/Register.test.jsx" timestamp="2025-04-29T03:25:37.086Z" hostname="Kaylys-MacBook-Pro-4.local" tests="5" failures="0" errors="0" skipped="0" time="1.1840444329">
+        <testcase classname="src/components/Register.test.jsx" name="Register &gt; renders all fields and button" time="0.4113101711">
+            <system-err>
+The tag &lt;text&gt; is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Register.test.jsx" name="Register &gt; submits form and shows success message" time="0.266503643">
+        </testcase>
+        <testcase classname="src/components/Register.test.jsx" name="Register &gt; shows error message on server validation failure" time="0.2938097658">
+            <system-err>
+Error during registration: [ { description: [32m&apos;Email already exists.&apos;[39m } ]
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Register.test.jsx" name="Register &gt; shows generic error message if unexpected server error occurs" time="0.18034356">
+            <system-err>
+Error during registration: [90mundefined[39m
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/components/Register.test.jsx" name="Register &gt; toggles password visibility" time="0.030313982">
+        </testcase>
+    </testsuite>
+
 </testsuites>
