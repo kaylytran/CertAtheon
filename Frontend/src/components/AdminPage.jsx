@@ -291,6 +291,12 @@ const AdminPage = () => {
                     >
                         Home
                     </button>
+                    <button
+                        className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
+                        onClick={() => navigate('/catalog')}
+                    >
+                        Catalog
+                    </button>                    
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-white">

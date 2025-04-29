@@ -395,7 +395,7 @@ const CertificateCatalog = () => {
                     <button
                         className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
                     >
-                        Certificate Catalogue
+                        Catalog
                     </button>
                 </div>
                 <div className="flex items-center gap-4">
