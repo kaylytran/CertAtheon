@@ -309,8 +309,9 @@ namespace Backend.Controllers
                 .Select(c => new { c.Id, c.CertificateName })
                 .ToListAsync();
 
+            // find the first catalog whose name contains the cleaned‐up certName
             var match = catalogs.FirstOrDefault(c =>
-                string.Equals(c.CertificateName, certName, StringComparison.OrdinalIgnoreCase)
+                c.CertificateName.Contains(certName, StringComparison.OrdinalIgnoreCase)
             );
 
             int? catalogId = match?.Id;
