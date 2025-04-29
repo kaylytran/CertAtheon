@@ -223,8 +223,8 @@ namespace Backend.Controllers
                     var lastName  = row["last_name"]?.ToString()?.Trim();
                     var email     = row["email"]?.ToString()?.Trim();
                     var phone     = row["phone"]?.ToString()?.Trim();
-                    var grade     = row["grade"]?.ToString()?.Trim();     // will map to JobTitle
-                    var role      = row["role"]?.ToString()?.Trim();      // will map to AppRole
+                    var grade     = row["role"]?.ToString()?.Trim();     // will map to JobTitle
+                    var role      = "Employee";     // will map to AppRole
                     var username  = row["username"]?.ToString()?.Trim();
 
                     if (string.IsNullOrWhiteSpace(email) ||
