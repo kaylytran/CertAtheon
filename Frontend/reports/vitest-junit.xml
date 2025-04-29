@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+
 <testsuites name="vitest tests" tests="34" failures="0" errors="0" time="6.6549626667">
     <testsuite name="src/components/AdminPage.test.jsx" timestamp="2025-04-29T03:25:37.075Z" hostname="Kaylys-MacBook-Pro-4.local" tests="4" failures="0" errors="0" skipped="0" time="0.9725830901">
         <testcase classname="src/components/AdminPage.test.jsx" name="AdminPage Component &gt; renders loading text initially" time="0.2523851142">
@@ -335,4 +336,5 @@ Error during registration: [90mundefined[39m
         <testcase classname="src/components/Register.test.jsx" name="Register &gt; toggles password visibility" time="0.030313982">
         </testcase>
     </testsuite>
+
 </testsuites>
