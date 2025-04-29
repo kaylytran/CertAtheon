@@ -258,20 +258,22 @@ const Home = () => {
 
         setErrorMessage(""); // Clear error message on input change
 
-        // If the certification dropdown is changed, update the level automatically
         if (name === "certification") {
+            // Find the selected certificate in the catalog
             const selectedCert = certificateCatalog.find(
-                (cert) => cert.certificationName === value
+                (cert) => cert.certificateName === value
             );
+
             setFormData({
                 ...formData,
                 certification: value,
-                level: selectedCert ? selectedCert.level : ""
+                certificationId: selectedCert ? selectedCert.id : null, // Update the ID if found, otherwise set to null
+                level: selectedCert ? selectedCert.level : "", // Update the level if found
             });
         } else {
             setFormData({
                 ...formData,
-                [name]: value
+                [name]: value,
             });
         }
     };
