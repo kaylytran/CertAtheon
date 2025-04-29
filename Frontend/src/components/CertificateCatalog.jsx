@@ -12,7 +12,6 @@ const CertificateCatalog = () => {
 
     // State for catalog data
     const [catalogData, setCatalogData] = useState([]);
-    const [filteredCatalogData, setFilteredCatalogData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [profilePic, setProfilePic] = useState("/profile_placeholder.png");
@@ -23,9 +22,10 @@ const CertificateCatalog = () => {
     const [availableLevels, setAvailableLevels] = useState([]);
     const [availableCategories, setAvailableCategories] = useState([]);
     
-    // Pagination state
+    // Server-side pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
 
     // State for modal
@@ -58,108 +58,157 @@ const CertificateCatalog = () => {
         };
     }, []);
 
-    // Fetch certificate catalog data from API
+    // Update effect to calculate total pages whenever totalItems or itemsPerPage changes
     useEffect(() => {
-        const fetchCatalogData = async () => {
-          try {
+        if (isMounted.current) {
+            const newTotalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            setTotalPages(newTotalPages);
+            
+            // Reset to first page when items per page changes and current page is out of bounds
+            if (currentPage > newTotalPages) {
+                setCurrentPage(1);
+            }
+        }
+    }, [totalItems, itemsPerPage, currentPage]);
+
+    // Fetch metadata for filters - we'll make a separate call to get all available levels and categories
+    const fetchFilterMetadata = async () => {
+        try {
+            // This endpoint would ideally return just the metadata (levels and categories)
+            // If such an endpoint doesn't exist, your backend team should consider adding one
+            const response = await axios.get(`${url}/api/CertificateCatalog/metadata`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (isMounted.current && response.data) {
+                const levels = response.data.levels || [];
+                const categories = response.data.categories || [];
+                
+                setAvailableLevels(levels.filter(Boolean));
+                setAvailableCategories(categories.filter(Boolean));
+            }
+        } catch (err) {
+            console.error("Error fetching filter metadata:", err);
+            // Fallback: If metadata endpoint doesn't exist, use the regular endpoint
+            try {
+                const fallbackResponse = await axios.get(`${url}/api/CertificateCatalog`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (isMounted.current && fallbackResponse.data?.records) {
+                    const certificates = fallbackResponse.data.records;
+                    
+                    // Extract unique levels and categories for filter dropdowns
+                    const levels = [...new Set(certificates.map(cert => cert.certificateLevel))];
+                    const categories = [...new Set(certificates.map(cert => cert.category))];
+                    
+                    setAvailableLevels(levels.filter(Boolean));
+                    setAvailableCategories(categories.filter(Boolean));
+                }
+            } catch (fallbackErr) {
+                console.error("Error fetching filter metadata (fallback):", fallbackErr);
+            }
+        }
+    };
+
+    // Updated fetchCatalogData function to use server-side pagination and filtering
+    const fetchCatalogData = async () => {
+        try {
             setLoading(true);
             
-            // Get all certificates at once for client-side filtering
-            // You might want to add a reasonable limit if there could be thousands of records
+            // Calculate offset based on current page and items per page
+            const offset = (currentPage - 1) * itemsPerPage;
+            
+            // Prepare query parameters for pagination
+            const params = {
+                offset: offset,
+                limit: itemsPerPage
+            };
+            
+            // Add filter parameters if not "all"
+            // Note: Assuming your backend API supports these filter parameters
+            if (filterLevel !== "all") {
+                params.certificateLevel = filterLevel;
+            }
+            
+            if (filterCategory !== "all") {
+                params.category = filterCategory;
+            }
+            
+            // Make API request with pagination and filter parameters
             const response = await axios.get(`${url}/api/CertificateCatalog`, {
-              headers: { Authorization: `Bearer ${token}` },
-              params: {
-                offset: 0,
-                limit: 1000 // Using a large limit to get all certificates
-              }
+                headers: { Authorization: `Bearer ${token}` },
+                params: params
             });
             
             if (isMounted.current) {
-                const certificates = response.data.records;
+                const certificates = response.data.records || [];
                 
-                // Process unique certificates
-                const uniqueCertificates = {};
-                certificates.forEach(cert => {
-                    const key = cert.id || cert.certificateName;
-                    if (!uniqueCertificates[key]) {
-                        uniqueCertificates[key] = cert;
-                    }
-                });
+                // Assuming the API returns total count in the response
+                // If it doesn't, you'll need to implement a way to get the total count
+                const totalCount = response.data.totalCount || certificates.length;
                 
-                const uniqueCertificatesList = Object.values(uniqueCertificates);
+                setCatalogData(certificates);
+                setTotalItems(totalCount);
                 
-                setCatalogData(uniqueCertificatesList);
-                
-                // Extract unique levels and categories for filter dropdowns
-                const levels = [...new Set(uniqueCertificatesList.map(cert => cert.certificateLevel))];
-                const categories = [...new Set(uniqueCertificatesList.map(cert => cert.category))];
-                
-                setAvailableLevels(levels);
-                setAvailableCategories(categories);
-                
-                console.log("Catalog data loaded:", uniqueCertificatesList.length, "unique certificates");
+                console.log(
+                    "Catalog data loaded:",
+                    certificates.length,
+                    "items of",
+                    totalCount,
+                    "total matching certificates"
+                );
             }
-          } catch (err) {
+        } catch (err) {
             console.error("Error fetching certificate catalog:", err);
             if (isMounted.current) {
                 setError("Failed to load certificate catalog");
             }
-          } finally {
+        } finally {
             if (isMounted.current) {
                 setLoading(false);
             }
-          }
-        };
-      
-        const fetchProfilePicture = async () => {
-          try {
+        }
+    };
+    
+    const fetchProfilePicture = async () => {
+        try {
             const response = await axios.get(`${url}/api/Profile`, {
-              headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
             
             if (isMounted.current) {
                 const imageUrl = response.data?.profilePictureUrl;
                 if (imageUrl) {
-                  const fullUrl = imageUrl.startsWith("http")
-                    ? imageUrl
-                    : `${url}/${imageUrl.replace(/^\/+/, "")}`;
-                  setProfilePic(fullUrl);
-                  localStorage.setItem("profilePhoto", fullUrl);
+                    const fullUrl = imageUrl.startsWith("http")
+                        ? imageUrl
+                        : `${url}/${imageUrl.replace(/^\/+/, "")}`;
+                    setProfilePic(fullUrl);
+                    localStorage.setItem("profilePhoto", fullUrl);
                 }
             }
-          } catch (err) {
+        } catch (err) {
             console.error("Error fetching profile picture:", err);
-          }
-        };
-      
+        }
+    };
+    
+    // Load initial data
+    useEffect(() => {
         const storedPhoto = localStorage.getItem("profilePhoto");
         if (storedPhoto) {
-          setProfilePic(storedPhoto);
+            setProfilePic(storedPhoto);
         } else {
-          fetchProfilePicture();
+            fetchProfilePicture();
         }
-      
-        fetchCatalogData();
-    }, [token, url, currentPage, itemsPerPage, filterLevel, filterCategory]);
-    // Apply filters when filter values change
-    useEffect(() => {
-        if (isMounted.current) {
-            applyFilters();
-        }
-    }, [filterLevel, filterCategory, catalogData]);
+        
+        // Fetch filter metadata only once on component mount
+        fetchFilterMetadata();
+    }, [token, url]);
     
-    // Calculate pagination values whenever filtered data changes
+    // Fetch catalog data whenever pagination or filters change
     useEffect(() => {
-        if (isMounted.current) {
-            const newTotalPages = Math.ceil(filteredCatalogData.length / itemsPerPage) || 1;
-            setTotalPages(newTotalPages);
-            
-            // Reset to first page when filters change and current page is out of bounds
-            if (currentPage > newTotalPages) {
-                setCurrentPage(1);
-            }
-        }
-    }, [filteredCatalogData, itemsPerPage, currentPage]);
+        fetchCatalogData();
+    }, [currentPage, itemsPerPage, filterLevel, filterCategory]);
     
     // Handle filter changes
     const handleLevelFilterChange = (e) => {
@@ -172,24 +221,6 @@ const CertificateCatalog = () => {
         setCurrentPage(1); // Reset to first page when filter changes
     };
     
-    // Apply both filters to the catalog data
-    const applyFilters = () => {
-        let filtered = [...catalogData];
-        
-        // Apply level filter if not "all"
-        if (filterLevel !== "all") {
-            filtered = filtered.filter(cert => cert.certificateLevel === filterLevel);
-        }
-        
-        // Apply category filter if not "all"
-        if (filterCategory !== "all") {
-            filtered = filtered.filter(cert => cert.category === filterCategory);
-        }
-        
-        console.log("Filter applied:", filtered.length, "certificates match criteria");
-        setFilteredCatalogData(filtered);
-    };
-    
     // Reset all filters
     const resetFilters = () => {
         setFilterLevel("all");
@@ -197,22 +228,18 @@ const CertificateCatalog = () => {
         setCurrentPage(1); // Reset to first page when filters are reset
     };
     
-    // Get current items for pagination
-    const getCurrentItems = () => {
-        const indexOfLastItem = currentPage * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        return filteredCatalogData.slice(indexOfFirstItem, indexOfLastItem);
-    };
-
     // Handle page change
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+        // fetchCatalogData is called automatically via the useEffect
     };
     
     // Handle items per page change
     const handleItemsPerPageChange = (e) => {
         const value = parseInt(e.target.value);
         setItemsPerPage(value);
+        setCurrentPage(1); // Reset to first page when changing items per page
+        // fetchCatalogData is called automatically via the useEffect
     };
 
     // Handle input changes in the modal with validation
@@ -323,32 +350,17 @@ const CertificateCatalog = () => {
                     description: "",
                 });
                 
-                // Update the catalog data with the new certificate
-                const updatedCatalog = [...catalogData, response.data];
-                
-                // Process unique certificates again
-                const uniqueCertificates = {};
-                updatedCatalog.forEach(cert => {
-                    const key = cert.id || cert.certificateName;
-                    if (!uniqueCertificates[key]) {
-                        uniqueCertificates[key] = cert;
-                    }
-                });
-                
-                const uniqueCertificatesList = Object.values(uniqueCertificates);
-                setCatalogData(uniqueCertificatesList);
-                
-                // Update available filters if needed
+                // Update filter metadata if needed
                 if (!availableLevels.includes(response.data.certificateLevel)) {
-                    setAvailableLevels([...availableLevels, response.data.certificateLevel]);
+                    setAvailableLevels([...availableLevels, response.data.certificateLevel].filter(Boolean));
                 }
                 
                 if (!availableCategories.includes(response.data.category)) {
-                    setAvailableCategories([...availableCategories, response.data.category]);
+                    setAvailableCategories([...availableCategories, response.data.category].filter(Boolean));
                 }
                 
-                // Reset to first page to show the new certificate
-                setCurrentPage(1);
+                // Refresh catalog data to show the new certificate
+                fetchCatalogData();
             }
         } catch (err) {
             console.error("Error adding certificate:", err);
@@ -522,8 +534,8 @@ const CertificateCatalog = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {getCurrentItems().length > 0 ? (
-                                        getCurrentItems().map((certificate, index) => (
+                                    {catalogData.length > 0 ? (
+                                        catalogData.map((certificate, index) => (
                                             <tr key={certificate.id || index} className={index % 2 === 0 ? "bg-gray-200" : "bg-white"}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {certificate.certificateName}
@@ -551,8 +563,8 @@ const CertificateCatalog = () => {
                                 </tbody>
                             </table>
                             
-                            {/* Pagination Controls */}
-                            {filteredCatalogData.length > 0 && (
+                            {/* Pagination Controls - Updated for server-side pagination */}
+                            {totalItems > 0 && (
                                 <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                                     <div className="flex-1 flex justify-between sm:hidden">
                                         <button
@@ -582,12 +594,12 @@ const CertificateCatalog = () => {
                                         <div>
                                             <p className="text-sm text-gray-700">
                                                 Showing <span className="font-medium">
-                                                  {filteredCatalogData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                                                  {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
                                                 </span> to{" "}
                                                 <span className="font-medium">
-                                                  {Math.min(currentPage * itemsPerPage, filteredCatalogData.length)}
+                                                  {Math.min(currentPage * itemsPerPage, totalItems)}
                                                 </span> of{" "}
-                                                <span className="font-medium">{filteredCatalogData.length}</span> results
+                                                <span className="font-medium">{totalItems}</span> results
                                             </p>
                                         </div>
                                         <div className="flex items-center">

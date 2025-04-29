@@ -21,112 +21,91 @@ const Home = () => {
         level: "",
         documentUrl: null
     });
-    const [uploadedFile, setUploadedFile] = useState(null); // Add a new state for the file upload
-
-    // handle error message in adding/editing certifications
+    const [uploadedFile, setUploadedFile] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
-
-    // Add isMounted ref to prevent state updates after unmount
     const isMounted = useRef(true);
     
-    // Pagination state
+    // Updated pagination state for server-side pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
 
     const url = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem('token');
 
-    //BlogURL
     let blogUrl;
-    // Mock user info from localStorage
     const userInfo = {
         firstName: localStorage.getItem('firstName') || 'User',
         lastName: localStorage.getItem('lastName') || '',
         userRole: localStorage.getItem('userRole') || 'User',
     };
 
-    // Set isMounted to false when component unmounts
     useEffect(() => {
         return () => {
             isMounted.current = false;
         };
     }, []);
 
-    // Navigate to home
     const navigateToHome = () => {
         navigate('/home');
     };
 
-    // Navigate to profile
     const navigateToProfile = () => {
         navigate('/profile');
     };
 
-    // Handle logout
     const handleLogout = () => {
         localStorage.clear();
         navigate('/');
     };
     
-    // Calculate pagination values whenever certifications data changes
+    // Update effect to calculate total pages whenever totalItems or itemsPerPage changes
     useEffect(() => {
         if (isMounted.current) {
-            const newTotalPages = Math.ceil(myCertifications.length / itemsPerPage) || 1;
+            const newTotalPages = Math.ceil(totalItems / itemsPerPage) || 1;
             setTotalPages(newTotalPages);
             
-            // Reset to first page when data changes and current page is out of bounds
+            // Reset to first page when items per page changes and current page is out of bounds
             if (currentPage > newTotalPages) {
                 setCurrentPage(1);
             }
         }
-    }, [myCertifications, itemsPerPage, currentPage]);
+    }, [totalItems, itemsPerPage, currentPage]);
     
-    // Get current items for pagination
-    const getCurrentItems = () => {
-        const indexOfLastItem = currentPage * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        return myCertifications.slice(indexOfFirstItem, indexOfLastItem);
-    };
-    
-    // Handle page change
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
-    };
-    
-    // Handle items per page change
-    const handleItemsPerPageChange = (e) => {
-        const value = parseInt(e.target.value);
-        setItemsPerPage(value);
-        setCurrentPage(1); // Reset to first page when changing items per page
-    };
-
+    // Updated fetchCertificates function to use server-side pagination
     const fetchCertificates = async () => {
         try {
             setLoading(true);
+            
+            // Calculate offset based on current page and items per page
+            const offset = (currentPage - 1) * itemsPerPage;
+            
+            // Make API request with pagination parameters
             const response = await axios.get(`${url}/api/Certificates`, {
                 headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    offset: offset,
+                    limit: itemsPerPage
+                }
             });
 
             if (isMounted.current) {
-                // Process unique certifications
-                const uniqueCertifications = {};
+                // Extract certificates and total count from response
                 const certificationsData = response.data.records || [];
-
-                certificationsData.forEach((cert) => {
-                    const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
-                    if (!uniqueCertifications[key]) {
-                        uniqueCertifications[key] = cert;
-                    }
-                });
-
-                const uniqueCertificationsList = Object.values(uniqueCertifications);
-                setMyCertifications(uniqueCertificationsList);
+                // Assuming the API returns total count in the response
+                // If it doesn't, you'll need to make a separate API call to get the total count
+                const totalCount = response.data.totalCount || certificationsData.length;
+                
+                setMyCertifications(certificationsData);
+                setTotalItems(totalCount);
 
                 console.log(
                     "Certifications loaded:",
-                    uniqueCertificationsList.length,
-                    "unique certifications"
+                    certificationsData.length,
+                    "items of",
+                    totalCount,
+                    "total items"
                 );
             }
         } catch (err) {
@@ -148,7 +127,6 @@ const Home = () => {
             if (isMounted.current) {
                 const data = response.data.records;
                 
-                // Process unique catalog entries
                 const uniqueCatalogEntries = {};
                 if (Array.isArray(data)) {
                     data.forEach(cert => {
@@ -196,6 +174,7 @@ const Home = () => {
         }
     };
 
+    // Update the effect to call fetchCertificates whenever pagination changes
     useEffect(() => {
         const cachedPic = localStorage.getItem("profilePictureUrl");
         if (cachedPic) {
@@ -206,7 +185,7 @@ const Home = () => {
 
         fetchCertificates();
         fetchCertificateCatalog();
-    }, [token, url]);
+    }, [token, url, currentPage, itemsPerPage]); // Add currentPage and itemsPerPage as dependencies
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -256,11 +235,6 @@ const Home = () => {
                 blogUrl = documentUrl; // Store the document URL for later use
                 console.log("Document URL:", blogUrl);
 
-                // // Check if the certificateName exists in the Certificate Catalog
-                // const matchedCert = certificateCatalog.find(
-                //     (cert) => cert.certificateName === certificateName
-                // );
-
                 if (!certificateCatalogId) {
                     setErrorMessage("Certificate not found in the catalog");
                 } else {
@@ -293,20 +267,10 @@ const Home = () => {
     const handleAddNewSubmit = async (e) => {
         e.preventDefault();
 
-        // // Find the selected certificate in the catalog
-        // const selectedCert = certificateCatalog.find(
-        //     (cert) => cert.certificateName === formData.certification
-        // );
-
-        // if (!selectedCert) {
-        //     alert("Please select a valid certificate.");
+        // if (!formData.certificationId) {
+        //     alert("No such certificate found in the catalog.");
         //     return;
         // }
-
-        if (!formData.certificationId) {
-            alert("No such certificate found in the catalog.");
-            return;
-        }
 
         // Prepare the payload for the POST request
         const payload = {
@@ -347,7 +311,6 @@ const Home = () => {
         } catch (err) {
             console.error("Error adding certificate:", err);
             if (isMounted.current) {
-                // alert("Failed to add certificate: " + (err.response?.data?.message || err.message));
                 setErrorMessage("Failed to add certificate: " + (err.response?.data?.message || err.message));
             }
         } finally {
@@ -379,15 +342,9 @@ const Home = () => {
                 alert("Certificate updated successfully!");
                 setShowEditModal(false);
                 setCurrentCert(null);
-
-                // Update the specific certification in the state
-                setMyCertifications((prevCertifications) =>
-                    prevCertifications.map((cert) =>
-                        cert.id === currentCert.id
-                            ? { ...cert, ...payload } // Update the edited certification
-                            : cert
-                    )
-                );
+                
+                // Refresh certificates to get updated data from server
+                fetchCertificates();
             }
         } catch (err) {
             console.error("Error updating certificate:", err);
@@ -413,33 +370,13 @@ const Home = () => {
 
                 if (isMounted.current) {
                     alert("Certification deleted successfully!");
-
-                    // Refresh the certifications list
-                    const response = await axios.get(`${url}/api/Certificates`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-
-                    // Log the response data for debugging
-                    console.log("Response Data:", response.data.records);
-
-                    // Ensure response.data is an array
-                    const certificationsData = Array.isArray(response.data.records) ? response.data.records : [];
-                    const uniqueCertifications = {};
-
-                    certificationsData.forEach((cert) => {
-                        const key = cert.id || `${cert.certificateName}-${cert.certifiedDate}`;
-                        if (!uniqueCertifications[key]) {
-                            uniqueCertifications[key] = cert;
-                        }
-                    });
-
-                    const uniqueCertificationsList = Object.values(uniqueCertifications);
-                    setMyCertifications(uniqueCertificationsList);
-
-                    // If we're on a page that no longer exists, go to the last page
-                    const newTotalPages = Math.ceil(uniqueCertificationsList.length / itemsPerPage);
-                    if (currentPage > newTotalPages && newTotalPages > 0) {
-                        setCurrentPage(newTotalPages);
+                    
+                    // After deleting, refresh the current page
+                    // If there are no items left on this page, go back to the previous page
+                    if (myCertifications.length === 1 && currentPage > 1) {
+                        setCurrentPage(prevPage => prevPage - 1);
+                    } else {
+                        fetchCertificates();
                     }
                 }
             } catch (err) {
@@ -453,6 +390,20 @@ const Home = () => {
                 }
             }
         }
+    };
+
+    // Updated handlePageChange function
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        // fetchCertificates is called automatically via the useEffect
+    };
+    
+    // Updated handleItemsPerPageChange function
+    const handleItemsPerPageChange = (e) => {
+        const value = parseInt(e.target.value);
+        setItemsPerPage(value);
+        setCurrentPage(1); // Reset to first page when changing items per page
+        // fetchCertificates is called automatically via the useEffect
     };
 
     const Modal = ({ isOpen, onClose, title, onSubmit, children }) => {
@@ -543,16 +494,6 @@ const Home = () => {
                     required
                 />
             </div>
-            {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Level</label>
-                <input
-                    type="text"
-                    name="level"
-                    value={formData.level}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-                />
-            </div> */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF of Certification</label>
                 <input
@@ -668,8 +609,8 @@ const Home = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {getCurrentItems().length > 0 ? (
-                                            getCurrentItems().map((cert, index) => (
+                                        {myCertifications.length > 0 ? (
+                                            myCertifications.map((cert, index) => (
                                                 <tr key={cert.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                                                     {/* Certification Name */}
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -747,8 +688,8 @@ const Home = () => {
                                 </table>
                             </div>
                             
-                            {/* Pagination Controls */}
-                            {myCertifications.length > 0 && (
+                            {/* Pagination Controls - Updated for server-side pagination */}
+                            {totalItems > 0 && (
                                 <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                                     <div className="flex-1 flex justify-between sm:hidden">
                                         <button
@@ -778,12 +719,12 @@ const Home = () => {
                                         <div>
                                             <p className="text-sm text-gray-700">
                                                 Showing <span className="font-medium">
-                                                  {myCertifications.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                                                  {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
                                                 </span> to{" "}
                                                 <span className="font-medium">
-                                                  {Math.min(currentPage * itemsPerPage, myCertifications.length)}
+                                                  {Math.min(currentPage * itemsPerPage, totalItems)}
                                                 </span> of{" "}
-                                                <span className="font-medium">{myCertifications.length}</span> results
+                                                <span className="font-medium">{totalItems}</span> results
                                             </p>
                                         </div>
                                         <div className="flex items-center">
@@ -795,10 +736,10 @@ const Home = () => {
                                                 className="mr-4 px-2 py-1 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                                             >
                                                 <option value={5}>5</option>
-                                        <option value={10}>10</option>
-                                        <option value={15}>15</option>
-                                        <option value={20}>20</option>
-                                        <option value={25}>25</option>
+                                                <option value={10}>10</option>
+                                                <option value={15}>15</option>
+                                                <option value={20}>20</option>
+                                                <option value={25}>25</option>
                                             </select>
                                             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                                 <button
@@ -901,7 +842,6 @@ const Home = () => {
                 <CertificationForm
                     isEdit={false} 
                     errorMessage={errorMessage}
-                    setErrorMessage={setErrorMessage} // also pass the setter if needed
                 />
             </Modal>
 
@@ -915,7 +855,6 @@ const Home = () => {
                 <CertificationForm
                     isEdit={true} 
                     errorMessage={errorMessage}
-                    setErrorMessage={setErrorMessage} // also pass the setter if needed
                 />
             </Modal>
         </div>
